@@ -1,0 +1,180 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.game-container {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    max-width: 800px;
+    width: 90%;
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.stats {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #555;
+}
+
+.deck-area {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0;
+}
+
+.deck {
+    width: 120px;
+    height: 170px;
+    background: linear-gradient(145deg, #2c3e50, #34495e);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    transition: transform 0.2s;
+    color: white;
+    text-align: center;
+    font-weight: bold;
+}
+
+.deck:hover {
+    transform: scale(1.05);
+}
+
+.deck:active {
+    transform: scale(0.95);
+}
+
+.table-area {
+    margin-top: 30px;
+}
+
+.table-area h3 {
+    text-align: center;
+    color: #555;
+    margin-bottom: 15px;
+}
+
+.table {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    min-height: 200px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.card {
+    width: 100px;
+    height: 140px;
+    background: linear-gradient(145deg, #fff, #e8e8e8);
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card-name {
+    font-weight: bold;
+    color: #333;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.card-rarity {
+    font-size: 12px;
+    color: #666;
+}
+
+.card-value {
+    font-size: 16px;
+    color: #27ae60;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+.card-animation {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 150px;
+    height: 200px;
+    background: linear-gradient(145deg, #fff, #e8e8e8);
+    border: 3px solid #f39c12;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    z-index: 1000;
+    animation: revealCard 1s ease-out;
+}
+
+@keyframes revealCard {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5) rotateY(180deg);
+    }
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.1) rotateY(0deg);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1) rotateY(0deg);
+    }
+}
+
+.hidden {
+    display: none;
+}
+
+.shuffling {
+    animation: shuffle 0.5s ease-in-out;
+}
+
+@keyframes shuffle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-5deg); }
+    75% { transform: rotate(5deg); }
+}
