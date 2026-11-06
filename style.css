@@ -37,6 +37,28 @@ h1 {
     color: #555;
 }
 
+.buttons {
+    display: flex;
+    justify-content: center;
+    margin: 15px 0;
+}
+
+.btn {
+    background: linear-gradient(145deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: transform 0.2s;
+}
+
+.btn:hover {
+    transform: scale(1.05);
+}
+
 .deck-area {
     display: flex;
     justify-content: center;
@@ -177,4 +199,91 @@ h1 {
     0%, 100% { transform: rotate(0deg); }
     25% { transform: rotate(-5deg); }
     75% { transform: rotate(5deg); }
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 30px;
+    cursor: pointer;
+    color: #333;
+}
+
+.close-btn:hover {
+    color: #e74c3c;
+}
+
+.carddex-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.carddex-entry {
+    background: #f8f8f8;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+    opacity: 0.4;
+    transition: all 0.3s;
+}
+
+.carddex-entry.discovered {
+    opacity: 1;
+    border-color: #f39c12;
+    background: linear-gradient(145deg, #fff9e6, #fff);
+}
+
+.carddex-entry .card-name {
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.carddex-entry .card-rarity {
+    font-size: 11px;
+    color: #666;
+}
+
+.carddex-entry .card-value {
+    font-size: 14px;
+    color: #27ae60;
+    font-weight: bold;
+}
+
+.carddex-entry .status {
+    font-size: 10px;
+    color: #999;
+    margin-top: 5px;
+}
+
+.carddex-entry.discovered .status {
+    color: #27ae60;
+    font-weight: bold;
 }
