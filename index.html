@@ -3,44 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Draw a Wolfy Card: Deck Incremental</title>
+    <title>Draw a Wolfy Card: Deck Incremental Pro</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="game-container">
-        <h1>Draw a Wolfy Card</h1>
+        <header>
+            <h1>🐺 Draw a Wolfy Card</h1>
+            <p class="subtitle">Revela cartas, gana dinero, mejora tu suerte.</p>
+        </header>
         
-        <div class="stats">
-            <p>Dinero: $<span id="money">0</span></p>
-            <p>Cartas en mesa: <span id="cards-on-table">0</span>/20</p>
-            <p>Cartas descubiertas: <span id="cards-discovered">0</span></p>
-        </div>
-        
-        <div class="buttons">
-            <button id="btn-carddex" class="btn">📖 Carddex</button>
-        </div>
-        
-        <div class="deck-area">
-            <div id="deck" class="deck">
-                <div class="deck-card">Baraja<br>(20)</div>
+        <!-- Stats Principales -->
+        <div class="stats-panel">
+            <div class="stat-box big-money">
+                <span class="label">Dinero Total</span>
+                <span class="value money-display">$<span id="money">0</span></span>
+            </div>
+            
+            <div class="sub-stats">
+                <div class="stat-mini">
+                    <span class="label">Mazo Restante</span>
+                    <span class="value"><span id="deck-count">52</span>/52</span>
+                </div>
+                <div class="stat-mini">
+                    <span class="label">Crit Chance</span>
+                    <span class="value"><span id="crit-chance-display">5%</span></span>
+                </div>
+                <div class="stat-mini">
+                    <span class="label">Descubiertos</span>
+                    <span class="value"><span id="cards-discovered">0</span>/<span id="total-perks">9</span></span>
+                </div>
             </div>
         </div>
         
-        <div class="table-area">
-            <h3>Mesa</h3>
-            <div id="table" class="table"></div>
+        <!-- Barra de Perks Activos -->
+        <div id="active-perks-bar" class="perks-bar"></div>
+
+        <!-- Área de Juego Central -->
+        <main class="play-area">
+            <!-- Botón Grande del Mazo -->
+            <div class="deck-zone">
+                <button id="btn-deck" class="mega-deck-btn">
+                    <div class="deck-back-design">
+                        <span class="icon">🃏</span>
+                        <span class="text">REVELAR</span>
+                    </div>
+                </button>
+                <p class="hint-text">Haz clic para sacar una carta</p>
+            </div>
+
+            <!-- Historial Reciente (La "Mesa") -->
+            <div class="history-zone">
+                <h3>Mesa / Historial</h3>
+                <div id="recent-history" class="history-list">
+                     <div class="empty-hint">Tu mesa está vacía</div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Tienda de Mejoras -->
+        <section class="shop-section">
+            <h3>Tienda de Mejoras</h3>
+            <div class="upgrades-grid">
+                
+                <!-- Upgrade 1: Valor Base -->
+                <div class="upgrade-card">
+                    <div class="uc-header">
+                        <span class="uc-icon">💰</span>
+                        <span class="uc-title">Valor Base +0.2</span>
+                    </div>
+                    <div class="uc-body">
+                        <p>Aumenta el valor base de todas las cartas.</p>
+                        <div class="uc-level">Nivel: <span id="lvl-base-val">0</span></div>
+                        <div class="uc-effect">Efecto: +$<span id="eff-base-val">0.0</span></div>
+                    </div>
+                    <button id="buy-base-val" class="btn-buy">Comprar ($<span id="cost-base-val">10</span>)</button>
+                </div>
+
+                <!-- Upgrade 2: Probabilidad Crítica -->
+                <div class="upgrade-card">
+                    <div class="uc-header">
+                        <span class="uc-icon">🎲</span>
+                        <span class="uc-title">Prob. Crít %</span>
+                    </div>
+                    <div class="uc-body">
+                        <p>+0.5% chance de crítico por nivel (Max 90%).</p>
+                        <div class="uc-level">Nivel: <span id="lvl-crit-pct">0</span></div>
+                        <div class="uc-effect">Chance: <span id="eff-crit-pct">5%</span></div>
+                    </div>
+                    <button id="buy-crit-pct" class="btn-buy">Comprar ($<span id="cost-crit-pct">25</span>)</button>
+                </div>
+
+                <!-- Upgrade 3: Multiplicador Crítico -->
+                <div class="upgrade-card">
+                    <div class="uc-header">
+                        <span class="uc-icon">⚡</span>
+                        <span class="uc-title">Mult. Crítico</span>
+                    </div>
+                    <div class="uc-body">
+                        <p>+0.25x daño en críticos por nivel.</p>
+                        <div class="uc-level">Nivel: <span id="lvl-crit-mult">0</span></div>
+                        <div class="uc-effect">Mult: x<span id="eff-crit-mult">2.00</span></div>
+                    </div>
+                    <button id="buy-crit-mult" class="btn-buy">Comprar ($<span id="cost-crit-mult">50</span>)</button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Modal de Recompensas (Perks) -->
+        <div id="reward-modal" class="modal hidden">
+            <div class="modal-content reward-modal-content">
+                <h2> 📦 Paquete de Cartas Especial</h2>
+                <p>Has llegado a un hito. Elige un beneficio permanente:</p>
+                <div id="reward-options" class="reward-grid"></div>
+            </div>
         </div>
         
-        <!-- Modal del Carddex -->
+        <!-- Modal del Carddex (Colección de Perks) -->
         <div id="carddex-modal" class="modal hidden">
             <div class="modal-content">
                 <span class="close-btn">&times;</span>
-                <h2>Carddex - Colección</h2>
+                <h2>Carddex - Colección de Perks</h2>
                 <div id="carddex-grid" class="carddex-grid"></div>
             </div>
         </div>
         
-        <div id="card-animation" class="card-animation hidden"></div>
+        <div class="buttons-bottom">
+             <button id="btn-carddex" class="btn secondary">📖 Ver Carddex</button>
+        </div>
     </div>
     
     <script src="script.js"></script>
