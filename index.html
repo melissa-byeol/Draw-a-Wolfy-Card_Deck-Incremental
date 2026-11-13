@@ -1,139 +1,173 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Draw a Wolfy Card: Deck Incremental Pro</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Draw a Wolfy Card — Deck Incremental</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="game-container">
-        <header>
-            <h1>🐺 Draw a Wolfy Card</h1>
-            <p class="subtitle">Revela cartas, gana dinero, mejora tu suerte.</p>
-        </header>
-        
-        <!-- Stats Principales -->
-        <div class="stats-panel">
-            <div class="stat-box big-money">
-                <span class="label">Dinero Total</span>
-                <span class="value money-display">$<span id="money">0</span></span>
+
+<div class="bg-layer bg-aurora"></div>
+<div class="bg-layer bg-grain"></div>
+
+<header class="topbar">
+    <div class="brand">🐺 <span>Draw a Wolfy Card</span></div>
+    <div class="top-actions">
+        <button id="btn-sound" class="chip-btn" title="Activar / silenciar sonido">🔊 Sonido</button>
+        <button id="btn-carddex" class="chip-btn">📖 Carddex</button>
+        <button id="btn-save-menu" class="chip-btn">💾 Partida</button>
+    </div>
+</header>
+
+<main class="game-container">
+
+    <!-- STATS -->
+    <section class="stats-panel">
+        <div class="stat-box big-money">
+            <span class="label">Dinero Total</span>
+            <span class="value money-display">$<span id="money">0</span></span>
+        </div>
+        <div class="sub-stats">
+            <div class="stat-mini">
+                <span class="label">Mazo restante</span>
+                <span class="value"><span id="deck-count">52</span>/<span id="deck-total">52</span></span>
             </div>
-            
-            <div class="sub-stats">
-                <div class="stat-mini">
-                    <span class="label">Mazo Restante</span>
-                    <span class="value"><span id="deck-count">52</span>/52</span>
-                </div>
-                <div class="stat-mini">
-                    <span class="label">Crit Chance</span>
-                    <span class="value"><span id="crit-chance-display">5%</span></span>
-                </div>
-                <div class="stat-mini">
-                    <span class="label">Descubiertos</span>
-                    <span class="value"><span id="cards-discovered">0</span>/<span id="total-perks">9</span></span>
-                </div>
+            <div class="stat-mini">
+                <span class="label">Prob. crítico</span>
+                <span class="value" id="crit-chance-display">5%</span>
+            </div>
+            <div class="stat-mini">
+                <span class="label">Perks descubiertos</span>
+                <span class="value"><span id="cards-discovered">0</span>/<span id="total-perks">10</span></span>
+            </div>
+            <div class="stat-mini">
+                <span class="label">Cartas reveladas</span>
+                <span class="value" id="cards-drawn-total">0</span>
             </div>
         </div>
-        
-        <!-- Barra de Perks Activos -->
-        <div id="active-perks-bar" class="perks-bar"></div>
+        <div class="milestone-wrap">
+            <div class="milestone-label">
+                <span>📦 Próximo paquete de perks</span>
+                <span><span id="milestone-current">0</span> / <span id="milestone-target">50</span> cartas</span>
+            </div>
+            <div class="milestone-track"><div id="milestone-fill" class="milestone-fill"></div></div>
+        </div>
+    </section>
 
-        <!-- Área de Juego Central -->
-        <main class="play-area">
-            <!-- Botón Grande del Mazo -->
-            <div class="deck-zone">
-                <button id="btn-deck" class="mega-deck-btn">
+    <!-- PERKS ACTIVOS -->
+    <div id="active-perks-bar" class="perks-bar">
+        <span class="perks-empty">Aún no tienes perks activos — revela 50 cartas para tu primer paquete ✨</span>
+    </div>
+
+    <!-- ZONA DE JUEGO -->
+    <section class="play-area">
+        <div class="deck-zone">
+            <div class="deck-stage">
+                <div class="deck-shadow"></div>
+                <div class="deck-stack s3"></div>
+                <div class="deck-stack s2"></div>
+                <button id="btn-deck" class="mega-deck-btn" aria-label="Revelar carta">
                     <div class="deck-back-design">
-                        <span class="icon">🃏</span>
+                        <span class="icon">🐺</span>
                         <span class="text">REVELAR</span>
+                        <span class="deck-hint-mini">clic · espacio · enter</span>
                     </div>
                 </button>
-                <p class="hint-text">Haz clic para sacar una carta</p>
+                <div id="reveal-slot" class="reveal-slot"></div>
+                <div id="fx-layer" class="fx-layer"></div>
             </div>
+            <p class="hint-text">Haz clic en el mazo para revelar una carta</p>
+        </div>
 
-            <!-- Historial Reciente (La "Mesa") -->
-            <div class="history-zone">
-                <h3>Mesa / Historial</h3>
-                <div id="recent-history" class="history-list">
-                     <div class="empty-hint">Tu mesa está vacía</div>
-                </div>
+        <div class="history-zone">
+            <h3>🃏 Mesa — últimas cartas</h3>
+            <div id="recent-history" class="history-list">
+                <div class="empty-hint">Tu mesa está vacía</div>
             </div>
-        </main>
-
-        <!-- Tienda de Mejoras -->
-        <section class="shop-section">
-            <h3>Tienda de Mejoras</h3>
-            <div class="upgrades-grid">
-                
-                <!-- Upgrade 1: Valor Base -->
-                <div class="upgrade-card">
-                    <div class="uc-header">
-                        <span class="uc-icon">💰</span>
-                        <span class="uc-title">Valor Base +0.2</span>
-                    </div>
-                    <div class="uc-body">
-                        <p>Aumenta el valor base de todas las cartas.</p>
-                        <div class="uc-level">Nivel: <span id="lvl-base-val">0</span></div>
-                        <div class="uc-effect">Efecto: +$<span id="eff-base-val">0.0</span></div>
-                    </div>
-                    <button id="buy-base-val" class="btn-buy">Comprar ($<span id="cost-base-val">10</span>)</button>
-                </div>
-
-                <!-- Upgrade 2: Probabilidad Crítica -->
-                <div class="upgrade-card">
-                    <div class="uc-header">
-                        <span class="uc-icon">🎲</span>
-                        <span class="uc-title">Prob. Crít %</span>
-                    </div>
-                    <div class="uc-body">
-                        <p>+0.5% chance de crítico por nivel (Max 90%).</p>
-                        <div class="uc-level">Nivel: <span id="lvl-crit-pct">0</span></div>
-                        <div class="uc-effect">Chance: <span id="eff-crit-pct">5%</span></div>
-                    </div>
-                    <button id="buy-crit-pct" class="btn-buy">Comprar ($<span id="cost-crit-pct">25</span>)</button>
-                </div>
-
-                <!-- Upgrade 3: Multiplicador Crítico -->
-                <div class="upgrade-card">
-                    <div class="uc-header">
-                        <span class="uc-icon">⚡</span>
-                        <span class="uc-title">Mult. Crítico</span>
-                    </div>
-                    <div class="uc-body">
-                        <p>+0.25x daño en críticos por nivel.</p>
-                        <div class="uc-level">Nivel: <span id="lvl-crit-mult">0</span></div>
-                        <div class="uc-effect">Mult: x<span id="eff-crit-mult">2.00</span></div>
-                    </div>
-                    <button id="buy-crit-mult" class="btn-buy">Comprar ($<span id="cost-crit-mult">50</span>)</button>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- Modal de Recompensas (Perks) -->
-        <div id="reward-modal" class="modal hidden">
-            <div class="modal-content reward-modal-content">
-                <h2> 📦 Paquete de Cartas Especial</h2>
-                <p>Has llegado a un hito. Elige un beneficio permanente:</p>
-                <div id="reward-options" class="reward-grid"></div>
+            <div class="session-stats">
+                <div><span class="ss-label">Mejor carta</span><span class="ss-value" id="best-card">$0</span></div>
+                <div><span class="ss-label">Mazos barajados</span><span class="ss-value" id="decks-shuffled">0</span></div>
+                <div><span class="ss-label">Críticos</span><span class="ss-value" id="total-crits">0</span></div>
             </div>
         </div>
-        
-        <!-- Modal del Carddex (Colección de Perks) -->
-        <div id="carddex-modal" class="modal hidden">
-            <div class="modal-content">
-                <span class="close-btn">&times;</span>
-                <h2>Carddex - Colección de Perks</h2>
-                <div id="carddex-grid" class="carddex-grid"></div>
+    </section>
+
+    <!-- TIENDA -->
+    <section class="shop-section">
+        <h3>🛒 Tienda de Mejoras</h3>
+        <div class="upgrades-grid">
+            <div class="upgrade-card">
+                <div class="uc-header"><span class="uc-icon">💰</span><span class="uc-title">Valor Base +$0.2</span></div>
+                <div class="uc-body">
+                    <p>Aumenta el valor base de todas las cartas del mazo.</p>
+                    <div class="uc-level">Nivel <span id="lvl-base-val">0</span></div>
+                    <div class="uc-effect">Efecto: +$<span id="eff-base-val">0.0</span></div>
+                </div>
+                <button id="buy-base-val" class="btn-buy">Comprar ($<span id="cost-base-val">10</span>)</button>
+            </div>
+            <div class="upgrade-card">
+                <div class="uc-header"><span class="uc-icon">🎲</span><span class="uc-title">Prob. Crítico +0.5%</span></div>
+                <div class="uc-body">
+                    <p>Más probabilidad de crítico por nivel (máx. 90%).</p>
+                    <div class="uc-level">Nivel <span id="lvl-crit-pct">0</span></div>
+                    <div class="uc-effect">Chance: <span id="eff-crit-pct">5%</span></div>
+                </div>
+                <button id="buy-crit-pct" class="btn-buy">Comprar ($<span id="cost-crit-pct">25</span>)</button>
+            </div>
+            <div class="upgrade-card">
+                <div class="uc-header"><span class="uc-icon">⚡</span><span class="uc-title">Mult. Crítico +0.25x</span></div>
+                <div class="uc-body">
+                    <p>Los golpes críticos multiplican más el valor de la carta.</p>
+                    <div class="uc-level">Nivel <span id="lvl-crit-mult">0</span></div>
+                    <div class="uc-effect">Mult: x<span id="eff-crit-mult">2.00</span></div>
+                </div>
+                <button id="buy-crit-mult" class="btn-buy">Comprar ($<span id="cost-crit-mult">50</span>)</button>
             </div>
         </div>
-        
-        <div class="buttons-bottom">
-             <button id="btn-carddex" class="btn secondary">📖 Ver Carddex</button>
-        </div>
+    </section>
+
+    <footer class="game-footer">
+        Un Lobito invisible baraja las cartas cuando el mazo se agota 🌙 · Tu partida se guarda sola.
+    </footer>
+</main>
+
+<!-- MODAL RECOMPENSAS -->
+<div id="reward-modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content reward-modal-content">
+        <h2>📦 Paquete de Cartas Especial</h2>
+        <p>¡Hito alcanzado! Elige un beneficio permanente:</p>
+        <div id="reward-options" class="reward-grid"></div>
     </div>
-    
-    <script src="script.js"></script>
+</div>
+
+<!-- MODAL CARDDEX -->
+<div id="carddex-modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content">
+        <button class="close-btn" data-close="carddex-modal" aria-label="Cerrar">&times;</button>
+        <h2>📖 Carddex — Colección de Perks</h2>
+        <p class="modal-sub">Descubre todos los perks revelando cartas y eligiendo paquetes.</p>
+        <div id="carddex-grid" class="carddex-grid"></div>
+    </div>
+</div>
+
+<!-- MODAL PARTIDA -->
+<div id="save-modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content save-modal-content">
+        <button class="close-btn" data-close="save-modal" aria-label="Cerrar">&times;</button>
+        <h2>💾 Gestión de Partida</h2>
+        <div class="save-actions">
+            <button id="btn-export" class="btn secondary">⬇️ Exportar partida (.json)</button>
+            <button id="btn-import" class="btn secondary">⬆️ Importar partida</button>
+            <input type="file" id="import-file" accept=".json,application/json" hidden>
+            <button id="btn-reset" class="btn danger">🗑️ Reiniciar partida</button>
+        </div>
+        <p class="modal-sub">La partida se guarda automáticamente en este navegador.</p>
+    </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="script.js"></script>
 </body>
 </html>
