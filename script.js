@@ -1,131 +1,42 @@
 /**
- * CONFIGURACIÓN Y DATOS BASE
+ * DRAW A WOLFY CARD — Deck Incremental
+ * Versión integrada y corregida.
  */
-const SUITS = [
-    { id: 'hearts', symbol: '❤️', name: 'Corazones' },
-    { id: 'emeralds', symbol: '💎', name: 'Esmeraldas' },
-    { id: 'moons', symbol: '🌙', name: 'Lunas' },
-    { id: 'bones', symbol: '🦴', name: 'Huesos' }
-];
-const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
-// Rarezas para UI
+const SUITS = [
+    { id: 'hearts', symbol: '❤️', name: 'Corazones', color: '#ff4d5e' },
+    { id: 'emeralds', symbol: '💎', name: 'Esmeraldas', color: '#2fe08a' },
+    { id: 'moons', symbol: '🌙', name: 'Lunas', color: '#b06cff' },
+    { id: 'bones', symbol: '🦴', name: 'Huesos', color: '#e8e3d5' }
+];
+const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+
 const RARITY_COLORS = {
-    common: '#bdc3c7',
-    rare: '#3498db',
-    epic: '#9b59b6',
-    legendary: '#f1c40f',
-    mythic: '#e74c3c'
+    common: '#c9d3dd', rare: '#4da3ff', epic: '#b06cff',
+    legendary: '#ffc93c', mythic: '#ff4d5e'
+};
+const RARITY_NAMES = {
+    common: 'COMÚN', rare: 'RARO', epic: 'ÉPICO', legendary: 'LEGENDARIO', mythic: 'MÍTICO'
 };
 
 /**
- * DEFINICIÓN DE PERKS
- * IMPORTANTE PARA IMÁGENES: 
- * Añade la propiedad 'imgUrl' si quieres usar una imagen personalizada.
- * Si no existe o está vacía, usará el 'icon' (emoji).
+ * PERKS — añade 'imgUrl' (ej: "./assets/perks/sun.png") para usar imagen propia.
+ * Si imgUrl está vacío o falla al cargar, se usa el emoji 'icon'.
  */
 const PERK_DATABASE = [
-    {
-        id: 'early_bird',
-        title: "Cachorrito Mañanero",
-        description: "Las primeras 10 cartas de cada mazo valen x2.",
-        icon: "☀️",
-        imgUrl: "", // Ejemplo: "./assets/perks/sun.png"
-        rarity: 'common',
-        type: 'multiplier_by_position',
-        params: { limit: 10, multiplier: 2 }
-    },
-    {
-        id: 'black_cat',
-        title: "Gatito Negro",
-        description: "Cartas de Lunas 🌙 y Huesos 🦴 valen x1.5.",
-        icon: "🐈‍⬛",
-        imgUrl: "", // Ejemplo: "./assets/perks/cat.png"
-        rarity: 'rare',
-        type: 'multiplier_by_suit',
-        params: { suits: ['moons', 'bones'], multiplier: 1.5 }
-    },
-    {
-        id: 'paleolithic_instinct',
-        title: "Instinto Paleolítico",
-        description: "10% de chance de que cualquier carta sea 'Piedra' (x2 valor).",
-        icon: "🪨",
-        imgUrl: "",
-        rarity: 'rare',
-        type: 'chance_multiplier_global',
-        params: { chance: 0.10, multiplier: 2 }
-    },
-    {
-        id: 'angry_wolfy',
-        title: "Lobito Enojón",
-        description: "Todas las cartas valen x3. Las últimas 5 se queman ($0).",
-        icon: "😤",
-        imgUrl: "",
-        rarity: 'epic',
-        type: 'global_mult_with_penalty',
-        params: { multiplier: 3, penaltyCount: 5 }
-    },
-    {
-        id: 'twin_decks',
-        title: "Barajas Gemelas",
-        description: "El mazo tiene 104 cartas. Todas valen x1.5. Barajado lento.",
-        icon: "🃏🃏",
-        imgUrl: "",
-        rarity: 'epic',
-        type: 'structural_change',
-        params: { doubleDeck: true, multiplier: 1.5 }
-    },
-    {
-        id: 'flamingo_style',
-        title: "Flamenco",
-        description: "Corazones/Esmeraldas x1.5. 5% chance de invocar 'Carta Lobito' (x20).",
-        icon: "🦩",
-        imgUrl: "",
-        rarity: 'legendary',
-        type: 'premium_trigger',
-        params: { premiumSuits: ['hearts', 'emeralds'], mult: 1.5, triggerChance: 0.05, jokerMult: 20 }
-    },
-    {
-        id: 'act_final',
-        title: "Acto Final",
-        description: "Últimas 13 cartas: x5 valor. 50% chance de Carta Lobito (x20).",
-        icon: "🎭",
-        imgUrl: "",
-        rarity: 'legendary',
-        type: 'endgame_boost',
-        params: { threshold: 13, multiplier: 5, jokerChance: 0.50, jokerMult: 20 }
-    },
-    {
-        id: 'troubadour_cub',
-        title: "Cachorrito Trovador",
-        description: "Tras un As (A), la siguiente carta se vuelve J/Q/K (o raro Lobito).",
-        icon: "🎵",
-        imgUrl: "",
-        rarity: 'legendary',
-        type: 'sequence_modifier',
-        params: { triggerRank: 'A', targetRanks: ['J','Q','K'] }
-    },
-    {
-        id: 'chicken_stampede',
-        title: "Pollo Chillón",
-        description: "5% chance de Estampida: Revela TODO el mazo restante instantáneamente con x2.",
-        icon: "🐔",
-        imgUrl: "",
-        rarity: 'mythic',
-        type: 'instant_reveal_event',
-        params: { chance: 0.05, multiplier: 2 }
-    },
-    {
-        id: 'overheat',
-        title: "Sobrecalentamiento",
-        description: "Clicks rápidos (<300ms) tienen 5% chance de Electrificar (x10).",
-        icon: "⚡",
-        imgUrl: "",
-        rarity: 'mythic',
-        type: 'speed_based_chance',
-        params: { chance: 0.05, multiplier: 10, speedThresholdMs: 300 }
-    }
+    { id:'early_bird', title:"Cachorrito Mañanero", description:"Las primeras 10 cartas de cada mazo valen x2.", icon:"☀️", imgUrl:"", rarity:'common', type:'multiplier_by_position', params:{ limit:10, multiplier:2 } },
+    { id:'black_cat', title:"Gatito Negro", description:"Cartas de Lunas 🌙 y Huesos 🦴 valen x1.5.", icon:"🐈‍⬛", imgUrl:"", rarity:'rare', type:'multiplier_by_suit', params:{ suits:['moons','bones'], multiplier:1.5 } },
+    { id:'paleolithic_instinct', title:"Instinto Paleolítico", description:"10% de chance de que cualquier carta sea 'Piedra' (x2 valor).", icon:"🪨", imgUrl:"", rarity:'rare', type:'chance_multiplier_global', params:{ chance:0.10, multiplier:2 } },
+    { id:'angry_wolfy', title:"Lobito Enojón", description:"Todas las cartas valen x3. Las últimas 5 se queman ($0).", icon:"😤", imgUrl:"", rarity:'epic', type:'global_mult_with_penalty', params:{ multiplier:3, penaltyCount:5 } },
+    { id:'twin_decks', title:"Barajas Gemelas", description:"El mazo tiene 104 cartas. Todas valen x1.5. Barajado lento.", icon:"🃏", imgUrl:"", rarity:'epic', type:'structural_change', params:{ doubleDeck:true, multiplier:1.5 } },
+    { id:'flamingo_style', title:"Flamenco", description:"Corazones/Esmeraldas x1.5. 5% chance de Carta Lobito (x20).", icon:"🦩", imgUrl:"", rarity:'legendary', type:'premium_trigger', params:{ premiumSuits:['hearts','emeralds'], mult:1.5, triggerChance:0.05, jokerMult:20 } },
+    { id:'act_final', title:"Acto Final", description:"Últimas 13 cartas: x5 valor. 50% chance de Carta Lobito (x20).", icon:"🎭", imgUrl:"", rarity:'legendary', type:'endgame_boost', params:{ threshold:13, multiplier:5, jokerChance:0.50, jokerMult:20 } },
+    { id:'troubadour_cub', title:"Cachorrito Trovador", description:"Tras un As (A), la siguiente carta se vuelve J/Q/K (o raro Lobito x20).", icon:"🎵", imgUrl:"", rarity:'legendary', type:'sequence_modifier', params:{ triggerRank:'A', targetRanks:['J','Q','K'] } },
+    { id:'chicken_stampede', title:"Pollo Chillón", description:"5% chance de Estampida: revela TODO el mazo restante al instante con x2.", icon:"🐔", imgUrl:"", rarity:'mythic', type:'instant_reveal_event', params:{ chance:0.05, multiplier:2 } },
+    { id:'overheat', title:"Sobrecalentamiento", description:"Clicks rápidos (<300ms) tienen 5% chance de Electrificar (x10).", icon:"⚡", imgUrl:"", rarity:'mythic', type:'speed_based_chance', params:{ chance:0.05, multiplier:10, speedThresholdMs:300 } }
 ];
+
+const SAVE_KEY = 'wolfyClickerSave_vFinal_Integrated';
 
 class WolfyClicker {
     constructor() {
@@ -133,49 +44,57 @@ class WolfyClicker {
         this.deck = [];
         this.history = [];
         this.maxHistory = 5;
-        
-        // Progreso General
-        this.cardsDrawnTotal = 0;
-        this.nextMilestone = 50; 
-        this.milestoneStep = 50; 
-        
-        // Estado de Perks
-        this.activePerks = []; 
-        this.currentDeckIndex = 0; 
-        this.totalDeckSize = 52; 
-        
-        // Estado Secuencial (para Cachorrito Trovador)
-        this.lastCardWasAce = false;
-        
-        // Estado de Velocidad (para Sobrecalentamiento)
-        this.lastClickTime = 0;
 
-        // Sistema de Upgrades
+        this.cardsDrawnTotal = 0;
+        this.nextMilestone = 50;
+        this.milestoneStep = 50;
+        this.prevMilestone = 0;
+
+        this.activePerks = [];
+        this.currentDeckIndex = 0;
+        this.totalDeckSize = 52;
+
+        this.lastCardWasAce = false;
+        this.lastClickTime = 0;
+        this.isShuffling = false;
+        this.pendingReward = false;
+
+        // Estadísticas extra
+        this.bestCard = 0;
+        this.decksShuffled = 0;
+        this.totalCrits = 0;
+        this.soundOn = true;
+
         this.upgrades = {
-            baseValue: { level: 0, cost: 10, effect: 0 },       
-            critChance: { level: 0, cost: 25, effect: 0.05 },   
-            critMult: { level: 0, cost: 50, effect: 2.0 }       
+            baseValue: { level: 0, cost: 10, effect: 0 },
+            critChance: { level: 0, cost: 25, effect: 0.05 },
+            critMult: { level: 0, cost: 50, effect: 2.0 }
         };
 
-        this.initDeck();
+        // Orden correcto: cargar ANTES de construir el mazo (fix Barajas Gemelas)
         this.loadGame();
+        this.initDeck();
         this.bindEvents();
+        this.initAudio();
         this.updateUI();
         this.renderShop();
-        this.renderCarddexInitial(); // Para mostrar total de perks
+        this.renderHistory();
+        this.renderCarddexInitial();
+        this.updateSoundButton();
+
+        if (this.pendingReward) this.triggerRewardSelection();
     }
+
+    /* ================= MAZO ================= */
 
     initDeck() {
         const hasTwins = this.activePerks.includes('twin_decks');
         this.totalDeckSize = hasTwins ? 104 : 52;
-        
         this.deck = [];
-        for (let suit of SUITS) {
-            for (let rank of RANKS) {
-                this.deck.push({ suit: suit, rank: rank });
-                if (hasTwins) {
-                    this.deck.push({ suit: suit, rank: rank });
-                }
+        for (const suit of SUITS) {
+            for (const rank of RANKS) {
+                this.deck.push({ suit, rank });
+                if (hasTwins) this.deck.push({ suit, rank });
             }
         }
         this.shuffle(this.deck);
@@ -190,153 +109,140 @@ class WolfyClicker {
         }
     }
 
+    /* ================= TIENDA ================= */
+
     buyUpgrade(type) {
         const upg = this.upgrades[type];
+        if (!upg) return;
+        if (type === 'critChance' && upg.effect >= 0.90) return;
+
         if (this.money >= upg.cost) {
             this.money -= upg.cost;
             upg.level++;
-            
             if (type === 'baseValue') {
                 upg.effect += 0.2;
                 upg.cost = Math.floor(upg.cost * 1.15);
             } else if (type === 'critChance') {
-                let newEffect = upg.effect + 0.005; 
-                if (newEffect > 0.90) newEffect = 0.90;
-                upg.effect = newEffect;
+                upg.effect = Math.min(0.90, upg.effect + 0.005);
                 upg.cost = Math.floor(upg.cost * 1.25);
             } else if (type === 'critMult') {
                 upg.effect += 0.25;
                 upg.cost = Math.floor(upg.cost * 1.20);
             }
-
+            this.playSound('buy');
             this.saveGame();
             this.updateUI();
             this.renderShop();
-            this.showNotification(`¡Mejora comprada! Nivel ${upg.level}`);
+            this.showToast(`✨ ¡Mejora comprada! Nivel ${upg.level}`);
         } else {
-            this.showNotification("No tienes suficiente dinero.");
+            this.playSound('error');
+            this.showToast('💸 No tienes suficiente dinero.');
         }
     }
 
     renderShop() {
-        document.getElementById('lvl-base-val').textContent = this.upgrades.baseValue.level;
-        document.getElementById('eff-base-val').textContent = this.upgrades.baseValue.effect.toFixed(1);
-        document.getElementById('cost-base-val').textContent = this.upgrades.baseValue.cost.toLocaleString();
-        
-        document.getElementById('lvl-crit-pct').textContent = this.upgrades.critChance.level;
-        document.getElementById('eff-crit-pct').textContent = (this.upgrades.critChance.effect * 100).toFixed(1) + '%';
-        document.getElementById('cost-crit-pct').textContent = this.upgrades.critChance.cost.toLocaleString();
-        
-        document.getElementById('lvl-crit-mult').textContent = this.upgrades.critMult.level;
-        document.getElementById('eff-crit-mult').textContent = this.upgrades.critMult.effect.toFixed(2);
-        document.getElementById('cost-crit-mult').textContent = this.upgrades.critMult.cost.toLocaleString();
+        const u = this.upgrades;
+        document.getElementById('lvl-base-val').textContent = u.baseValue.level;
+        document.getElementById('eff-base-val').textContent = u.baseValue.effect.toFixed(1);
+        document.getElementById('cost-base-val').textContent = u.baseValue.cost.toLocaleString('es');
 
-        document.getElementById('buy-base-val').disabled = this.money < this.upgrades.baseValue.cost;
-        document.getElementById('buy-crit-pct').disabled = this.money < this.upgrades.critChance.cost || this.upgrades.critChance.effect >= 0.90;
-        document.getElementById('buy-crit-mult').disabled = this.money < this.upgrades.critMult.cost;
+        document.getElementById('lvl-crit-pct').textContent = u.critChance.level;
+        document.getElementById('eff-crit-pct').textContent = (u.critChance.effect * 100).toFixed(1) + '%';
+        document.getElementById('cost-crit-pct').textContent = u.critChance.cost.toLocaleString('es');
+
+        document.getElementById('lvl-crit-mult').textContent = u.critMult.level;
+        document.getElementById('eff-crit-mult').textContent = u.critMult.effect.toFixed(2);
+        document.getElementById('cost-crit-mult').textContent = u.critMult.cost.toLocaleString('es');
+
+        document.getElementById('buy-base-val').disabled = this.money < u.baseValue.cost;
+        const critMaxed = u.critChance.effect >= 0.90;
+        const btnCrit = document.getElementById('buy-crit-pct');
+        btnCrit.disabled = this.money < u.critChance.cost || critMaxed;
+        btnCrit.classList.toggle('maxed', critMaxed);
+        btnCrit.innerHTML = critMaxed ? '🏆 MÁXIMO (90%)' : `Comprar ($<span id="cost-crit-pct">${u.critChance.cost.toLocaleString('es')}</span>)`;
+        document.getElementById('buy-crit-mult').disabled = this.money < u.critMult.cost;
     }
+
+    /* ================= CÁLCULO DE CARTA ================= */
 
     calculateCardValue(card, isInstantReveal = false) {
         let value = 1 + this.upgrades.baseValue.effect;
-        
-        let flags = {
-            isBurned: false,
-            isStone: false,
-            triggeredJoker: false,
-            isCritical: false,
-            isElectrified: false,
-            modifiedRank: null
+        const flags = {
+            isBurned: false, isStone: false, triggeredJoker: false,
+            isCritical: false, isElectrified: false, modifiedRank: null
         };
 
-        for (let perkId of this.activePerks) {
+        for (const perkId of this.activePerks) {
             const perk = PERK_DATABASE.find(p => p.id === perkId);
             if (!perk) continue;
 
             switch (perk.type) {
                 case 'multiplier_by_position':
-                    if (this.currentDeckIndex < perk.params.limit) {
-                        value *= perk.params.multiplier;
-                    }
+                    if (this.currentDeckIndex <= perk.params.limit) value *= perk.params.multiplier;
                     break;
 
                 case 'multiplier_by_suit':
-                    if (perk.params.suits.includes(card.suit.id)) {
-                        value *= perk.params.multiplier;
-                    }
+                    if (perk.params.suits.includes(card.suit.id)) value *= perk.params.multiplier;
                     break;
 
                 case 'chance_multiplier_global':
-                    if (Math.random() < perk.params.chance) {
-                        value *= perk.params.multiplier;
-                        flags.isStone = true;
-                    }
+                    if (Math.random() < perk.params.chance) { value *= perk.params.multiplier; flags.isStone = true; }
                     break;
 
-                case 'global_mult_with_penalty':
+                case 'global_mult_with_penalty': {
                     value *= perk.params.multiplier;
-                    const remainingCards = this.totalDeckSize - this.currentDeckIndex;
-                    if (remainingCards <= perk.params.penaltyCount) {
-                        flags.isBurned = true;
-                        value = 0;
-                    }
+                    const remaining = this.totalDeckSize - this.currentDeckIndex;
+                    if (remaining < perk.params.penaltyCount) { flags.isBurned = true; value = 0; }
                     break;
+                }
 
                 case 'structural_change':
-                     value *= perk.params.multiplier;
-                     break;
+                    value *= perk.params.multiplier;
+                    break;
 
                 case 'premium_trigger':
                     if (perk.params.premiumSuits.includes(card.suit.id)) {
                         value *= perk.params.mult;
-                        if (Math.random() < perk.params.triggerChance) {
-                            flags.triggeredJoker = true;
-                            value *= perk.params.jokerMult;
-                        }
+                        if (Math.random() < perk.params.triggerChance) { flags.triggeredJoker = true; value *= perk.params.jokerMult; }
                     }
                     break;
 
-                case 'endgame_boost':
-                    const cardsLeftInEndgame = this.totalDeckSize - this.currentDeckIndex;
-                    if (cardsLeftInEndgame <= perk.params.threshold) {
+                case 'endgame_boost': {
+                    const left = this.totalDeckSize - this.currentDeckIndex;
+                    if (left < perk.params.threshold) {
                         value *= perk.params.multiplier;
-                        if (Math.random() < perk.params.jokerChance) {
-                            flags.triggeredJoker = true;
-                            value *= perk.params.jokerMult;
-                        }
+                        if (Math.random() < perk.params.jokerChance) { flags.triggeredJoker = true; value *= perk.params.jokerMult; }
                     }
                     break;
+                }
 
                 case 'sequence_modifier':
                     if (this.lastCardWasAce && !isInstantReveal) {
-                        const options = [...perk.params.targetRanks];
                         if (Math.random() < 0.1) {
-                             flags.triggeredJoker = true;
-                             value *= 20;
-                             flags.modifiedRank = "LOBITO";
+                            flags.triggeredJoker = true; value *= 20; flags.modifiedRank = '🐺';
                         } else {
-                            const newRank = options[Math.floor(Math.random() * options.length)];
-                            flags.modifiedRank = newRank;
+                            const opts = perk.params.targetRanks;
+                            flags.modifiedRank = opts[Math.floor(Math.random() * opts.length)];
                         }
                     }
                     break;
 
-                case 'speed_based_chance':
-                    const now = Date.now();
-                    const timeDiff = now - this.lastClickTime;
-                    
-                    if (timeDiff < perk.params.speedThresholdMs && timeDiff > 0) {
-                         if (Math.random() < perk.params.chance) {
-                             flags.isElectrified = true;
-                             value *= perk.params.multiplier;
-                         }
+                case 'speed_based_chance': {
+                    const now = performance.now();
+                    const diff = now - this.lastClickTime;
+                    if (diff < perk.params.speedThresholdMs && diff > 0 && !isInstantReveal) {
+                        if (Math.random() < perk.params.chance) { flags.isElectrified = true; value *= perk.params.multiplier; }
                     }
-                    this.lastClickTime = now;
                     break;
-                
+                }
+
                 case 'instant_reveal_event':
                     if (!isInstantReveal && Math.random() < perk.params.chance) {
-                        this.triggerStampede(perk.params.multiplier);
-                        return { finalValue: 0, flags: {}, skipped: true };
+                        // Devuelve la carta al mazo: la estampida revelará TODO incluido ella
+                        this.deck.push(card);
+                        this.currentDeckIndex--;
+                        this.cardsDrawnTotal--;
+                        return { skipped: true };
                     }
                     break;
             }
@@ -347,152 +253,206 @@ class WolfyClicker {
             value *= this.upgrades.critMult.effect;
         }
 
-        if (card.rank === 'A') {
-            this.lastCardWasAce = true;
-        } else {
-            this.lastCardWasAce = false;
-        }
+        this.lastCardWasAce = (card.rank === 'A');
 
-        return {
-            finalValue: Math.floor(value),
-            flags: flags,
-            originalCard: card
-        };
+        return { finalValue: Math.floor(value), flags, originalCard: card };
     }
 
+    /* ================= ESTAMPIDA ================= */
+
     triggerStampede(multiplier) {
-        this.showNotification("🐔 ¡ESTAMPIDA DE CACHORRITOS!");
-        
+        this.showToast('🐔 ¡ESTAMPIDA DE CACHORRITOS! Todo el mazo revelado x2');
+        this.playSound('stampede');
+        this.screenFlash('#ffc93c');
+        this.spawnParticles(24, '#ffc93c');
+
+        let stampedeTotal = 0;
         while (this.deck.length > 0) {
             const card = this.deck.pop();
             this.currentDeckIndex++;
             this.cardsDrawnTotal++;
-            
-            let val = (1 + this.upgrades.baseValue.effect) * multiplier;
-            if (Math.random() < this.upgrades.critChance.effect) {
-                val *= this.upgrades.critMult.effect;
-            }
 
-            this.money += Math.floor(val);
-            
+            let val = (1 + this.upgrades.baseValue.effect) * multiplier;
+            const isCrit = Math.random() < this.upgrades.critChance.effect;
+            if (isCrit) { val *= this.upgrades.critMult.effect; this.totalCrits++; }
+            const finalVal = Math.floor(val);
+
+            this.money += finalVal;
+            stampedeTotal += finalVal;
+            if (finalVal > this.bestCard) this.bestCard = finalVal;
+
             this.history.unshift({
-                originalCard: card,
-                finalValue: Math.floor(val),
-                flags: { isStampeded: true },
-                isStampeded: true
+                originalCard: card, finalValue: finalVal,
+                flags: { isCritical: isCrit, isStampeded: true }, isStampeded: true
             });
             if (this.history.length > this.maxHistory) this.history.pop();
         }
-        
+
+        this.showFloatingText(`🐔 +$${stampedeTotal.toLocaleString('es')}`, '#ffc93c');
+        this.checkMilestone();
+        this.saveGame();
+        this.updateUI();
+        this.renderShop();
+        this.renderHistory();
         this.autoShuffle(true);
     }
 
+    /* ================= REVELAR ================= */
+
     revealCard() {
-        if (document.getElementById('reward-modal').classList.contains('hidden') === false) return;
-        if (this.deck.length === 0) {
-            this.autoShuffle();
-            return;
-        }
+        if (this.isShuffling) return;
+        if (!document.getElementById('reward-modal').classList.contains('hidden')) return;
+        if (!document.getElementById('carddex-modal').classList.contains('hidden')) return;
+        if (!document.getElementById('save-modal').classList.contains('hidden')) return;
+
+        if (this.deck.length === 0) { this.autoShuffle(); return; }
 
         const rawCard = this.deck.pop();
         this.currentDeckIndex++;
         this.cardsDrawnTotal++;
-        
-        const result = this.calculateCardValue(rawCard);
-        
-        if (result.skipped) return; 
 
+        const result = this.calculateCardValue(rawCard);
+        if (result.skipped) { this.triggerStampede(2); return; }
+
+        this.lastClickTime = performance.now();
         this.money += result.finalValue;
-        
+        if (result.flags.isCritical) this.totalCrits++;
+        if (result.finalValue > this.bestCard) this.bestCard = result.finalValue;
+
         this.addToHistory(result);
-        this.showFloatingText(`+$${result.finalValue}`, rawCard.suit.id, result.flags);
-        
+        this.renderRevealedCard(result);
+        this.playCardSound(result.flags);
+
+        const f = result.flags;
+        let label = `+$${result.finalValue.toLocaleString('es')}`;
+        let color = rawCard.suit.color;
+        if (f.isBurned) { label = '🔥 ¡QUEMADA!'; color = '#ff4d5e'; }
+        else if (f.triggeredJoker) { label = `🐺 ¡LOBITO! ${label}`; color = '#ffc93c'; this.screenFlash('#ffc93c'); this.spawnParticles(18, '#ffc93c'); }
+        else if (f.isElectrified) { label = `⚡ ${label}`; color = '#35e0ff'; this.screenFlash('#35e0ff'); this.spawnParticles(14, '#35e0ff'); }
+        else if (f.isStone) { label = `🪨 ${label}`; color = '#aab4bd'; }
+        else if (f.isCritical) { label = `💥 ${label}`; color = '#ff8a3c'; this.spawnParticles(10, '#ff8a3c'); }
+        else { this.spawnParticles(5, color); }
+
+        this.showFloatingText(label, color);
+        this.bumpMoney();
+
+        this.checkMilestone();
         this.saveGame();
         this.updateUI();
         this.renderShop();
 
-        if (this.cardsDrawnTotal >= this.nextMilestone) {
-            this.triggerRewardSelection();
-            this.nextMilestone += this.milestoneStep;
+        if (this.deck.length === 0 && document.getElementById('reward-modal').classList.contains('hidden')) {
+            this.autoShuffle();
         }
     }
 
+    checkMilestone() {
+        if (this.cardsDrawnTotal >= this.nextMilestone) {
+            this.prevMilestone = this.nextMilestone;
+            this.nextMilestone += this.milestoneStep;
+            this.pendingReward = true;
+            // Pequeño delay para que se vea la carta antes del modal
+            setTimeout(() => this.triggerRewardSelection(), 600);
+        }
+    }
+
+    /* ================= RECOMPENSAS / PERKS ================= */
+
     triggerRewardSelection() {
-        const modal = document.getElementById('reward-modal');
-        const optionsContainer = document.getElementById('reward-options');
-        optionsContainer.innerHTML = '';
-
-        const availableRewards = PERK_DATABASE.filter(p => !this.activePerks.includes(p.id));
-
-        if (availableRewards.length === 0) {
-            this.showNotification("¡Todos los perks desbloqueados!");
-            modal.classList.add('hidden');
+        const available = PERK_DATABASE.filter(p => !this.activePerks.includes(p.id));
+        if (available.length === 0) {
+            this.pendingReward = false;
+            this.showToast('🏆 ¡Todos los perks desbloqueados! El Lobito te da +$500 de propina.');
+            this.money += 500;
+            this.saveGame(); this.updateUI(); this.renderShop();
             return;
         }
 
-        const shuffled = [...availableRewards].sort(() => 0.5 - Math.random());
+        const modal = document.getElementById('reward-modal');
+        const container = document.getElementById('reward-options');
+        container.innerHTML = '';
+
+        const shuffled = [...available];
+        this.shuffle(shuffled);
         const selected = shuffled.slice(0, 3);
 
         selected.forEach(perk => {
             const btn = document.createElement('button');
             btn.className = 'reward-card-btn';
-            btn.style.borderColor = RARITY_COLORS[perk.rarity] || '#fff';
-            
-            // Lógica para imagen vs emoji
-            const visualContent = perk.imgUrl 
-                ? `<img src="${perk.imgUrl}" alt="${perk.title}" style="width:30px;height:30px;margin-bottom:5px;">` 
+            const rc = RARITY_COLORS[perk.rarity] || '#fff';
+            btn.style.borderColor = rc;
+
+            const visual = perk.imgUrl
+                ? `<img src="${perk.imgUrl}" alt="" style="width:36px;height:36px;" onerror="this.outerHTML='<div class=rc-icon>${perk.icon}</div>'">`
                 : `<div class="rc-icon">${perk.icon}</div>`;
 
             btn.innerHTML = `
-                ${visualContent}
-                <div class="rc-title" style="color:${RARITY_COLORS[perk.rarity]}">${perk.title}</div>
+                ${visual}
+                <div class="rc-title" style="color:${rc}">${perk.title}</div>
                 <div class="rc-desc">${perk.description}</div>
-                <small style="margin-top:5px; font-size:0.7rem; color:#888;">${perk.rarity.toUpperCase()}</small>
-            `;
-            btn.onclick = () => this.selectPerk(perk.id);
-            optionsContainer.appendChild(btn);
+                <div class="rc-rarity" style="color:${rc}">${RARITY_NAMES[perk.rarity]}</div>`;
+            btn.addEventListener('click', () => this.selectPerk(perk.id));
+            container.appendChild(btn);
         });
 
+        this.playSound('reward');
         modal.classList.remove('hidden');
     }
 
     selectPerk(perkId) {
+        if (this.activePerks.includes(perkId)) return;
         this.activePerks.push(perkId);
+        this.pendingReward = false;
         document.getElementById('reward-modal').classList.add('hidden');
-        
-        const perkData = PERK_DATABASE.find(p => p.id === perkId);
-        this.showNotification(`${perkData.icon} ¡Nuevo Perk: ${perkData.title}!`);
-        
+
+        const perk = PERK_DATABASE.find(p => p.id === perkId);
+        this.playSound('perk');
+        this.screenFlash(RARITY_COLORS[perk.rarity]);
+        this.showToast(`${perk.icon} ¡Nuevo perk: ${perk.title}!`);
+
         if (perkId === 'twin_decks') {
-             this.initDeck();
+            this.initDeck(); // reconstruye con 104 inmediatamente
+            this.showToast('🃏 ¡Barajas Gemelas activadas! Mazo nuevo de 104 cartas.');
         }
 
         this.saveGame();
-        this.renderPerksBar();
         this.updateUI();
-        this.renderCarddexInitial(); // Actualizar contador de descubiertos
+        this.renderShop();
+
+        if (this.deck.length === 0) this.autoShuffle();
     }
 
+    /* ================= BARAJADO ================= */
+
     autoShuffle(fromStampede = false) {
+        if (this.isShuffling) return;
+        this.isShuffling = true;
         const btn = document.getElementById('btn-deck');
         btn.disabled = true;
-        btn.innerHTML = '<div style="color:white; font-weight:bold;">BARAJANDO...</div>';
-        
-        const delay = this.activePerks.includes('twin_decks') ? 1500 : 800;
+        btn.classList.add('shuffling');
+        btn.innerHTML = '<div class="deck-back-design"><span class="icon">🌀</span><span class="text" style="font-size:0.8rem;">BARAJANDO…</span></div>';
+        this.playSound('shuffle');
 
+        const delay = this.activePerks.includes('twin_decks') ? 1500 : 800;
         setTimeout(() => {
             this.initDeck();
+            this.decksShuffled++;
+            this.isShuffling = false;
             btn.disabled = false;
+            btn.classList.remove('shuffling');
             btn.innerHTML = `
                 <div class="deck-back-design">
-                    <span class="icon">🃏</span>
+                    <span class="icon">🐺</span>
                     <span class="text">REVELAR</span>
-                </div>
-            `;
-            if(!fromStampede) this.showNotification("Nuevo mazo listo");
+                    <span class="deck-hint-mini">clic · espacio · enter</span>
+                </div>`;
+            if (!fromStampede) this.showToast('🌙 El Lobito invisible barajó un mazo nuevo');
+            this.saveGame();
             this.updateUI();
         }, delay);
     }
+
+    /* ================= HISTORIAL / MESA ================= */
 
     addToHistory(resultObj) {
         this.history.unshift(resultObj);
@@ -503,134 +463,234 @@ class WolfyClicker {
     renderHistory() {
         const container = document.getElementById('recent-history');
         container.innerHTML = '';
-        
-        if(this.history.length === 0) {
+        if (this.history.length === 0) {
             container.innerHTML = '<div class="empty-hint">Tu mesa está vacía</div>';
             return;
         }
-
         this.history.forEach((item, index) => {
-            const div = document.createElement('div');
             const card = item.originalCard;
-            
-            let extraClasses = '';
-            if (item.flags?.isBurned) extraClasses += ' burned';
-            if (item.flags?.isStone) extraClasses += ' stone';
-            if (item.flags?.triggeredJoker) extraClasses += ' joker-hit';
-            if (item.flags?.isCritical) extraClasses += ' critical';
-            if (item.flags?.isElectrified) extraClasses += ' electrified';
-            if (item.isStampeded) extraClasses += ' stampeded';
+            if (!card || !card.suit) return; // fix: nunca renderizar cartas corruptas
+            const div = document.createElement('div');
+            let extra = '';
+            const f = item.flags || {};
+            if (f.isBurned) extra += ' burned';
+            if (f.isStone) extra += ' stone';
+            if (f.triggeredJoker) extra += ' joker-hit';
+            if (f.isCritical) extra += ' critical';
+            if (f.isElectrified) extra += ' electrified';
+            if (item.isStampeded) extra += ' stampeded';
 
-            div.className = `mini-card ${card.suit.id} ${extraClasses}`;
-            div.style.animationDelay = `${index * 0.05}s`; 
-            
+            div.className = `mini-card ${card.suit.id}${extra}`;
+            div.style.animationDelay = `${index * 0.05}s`;
+
             let statusIcon = '';
-            if (item.flags?.isBurned) statusIcon = '🔥';
-            else if (item.flags?.isStone) statusIcon = '🪨';
-            else if (item.flags?.triggeredJoker) statusIcon = '🦩';
-            else if (item.flags?.isElectrified) statusIcon = '⚡';
-            else if (item.flags?.isCritical) statusIcon = '💥';
+            if (f.isBurned) statusIcon = '🔥';
+            else if (f.triggeredJoker) statusIcon = '🐺';
+            else if (f.isElectrified) statusIcon = '⚡';
+            else if (f.isStone) statusIcon = '🪨';
             else if (item.isStampeded) statusIcon = '🐔';
+            else if (f.isCritical) statusIcon = '💥';
 
-            const displayRank = item.flags?.modifiedRank || card.rank;
-
+            const displayRank = f.modifiedRank || card.rank;
             div.innerHTML = `
                 <span>${displayRank}</span>
                 <span>${card.suit.symbol}</span>
-                <small style="font-size:0.6rem; color:#fff; background:rgba(0,0,0,0.5); padding:2px 4px; border-radius:3px; margin-top:2px;">
-                    ${statusIcon} $${item.finalValue}
-                </small>
-            `;
+                <small>${statusIcon} $${item.finalValue.toLocaleString('es')}</small>`;
             container.appendChild(div);
         });
     }
 
-    showFloatingText(text, suitId, flags) {
-        const floatEl = document.createElement('div');
-        floatEl.textContent = text;
-        floatEl.style.position = 'absolute';
-        floatEl.style.left = '50%';
-        floatEl.style.top = '50%';
-        floatEl.style.transform = 'translate(-50%, -50%)';
-        floatEl.style.fontSize = '2rem';
-        floatEl.style.fontWeight = 'bold';
-        floatEl.style.pointerEvents = 'none';
-        floatEl.style.zIndex = '100';
-        floatEl.style.transition = 'all 0.8s ease-out';
-        
-        if (flags.isBurned) {
-            floatEl.style.color = '#e74c3c';
-            floatEl.textContent = "¡QUEMADA!";
-        } else if (flags.triggeredJoker) {
-            floatEl.style.color = '#f1c40f';
-            floatEl.textContent = `¡LOBITO! ${text}`;
-        } else if (flags.isElectrified) {
-            floatEl.style.color = '#00d2d3';
-            floatEl.textContent = `¡ELECTRICIDAD! ${text}`;
-        } else if (flags.isStone) {
-            floatEl.style.color = '#95a5a6';
-            floatEl.textContent = `PIEDRA ${text}`;
-        } else if (flags.isCritical) {
-            floatEl.style.color = '#ff9f43';
-            floatEl.textContent = `CRÍTICO! ${text}`;
-        } else {
-            const colors = { hearts: '#e74c3c', emeralds: '#2ecc71', moons: '#9b59b6', bones: '#bdc3c7' };
-            floatEl.style.color = colors[suitId] || '#fff';
+    renderRevealedCard(result) {
+        const slot = document.getElementById('reveal-slot');
+        slot.innerHTML = '';
+        const card = result.originalCard;
+        const f = result.flags;
+        const el = document.createElement('div');
+        const glow = (f.triggeredJoker || f.isElectrified || f.isCritical) ? ' special-glow' : '';
+        el.className = `revealed-card ${card.suit.id}${glow}`;
+        const rank = f.modifiedRank || card.rank;
+        el.innerHTML = `
+            <span class="rc-corner tl">${rank}${card.suit.symbol}</span>
+            <span class="rc-rank">${rank}</span>
+            <span class="rc-suit">${card.suit.symbol}</span>
+            <span class="rc-value">${f.isBurned ? '🔥 $0' : '$' + result.finalValue.toLocaleString('es')}</span>
+            <span class="rc-corner br">${rank}${card.suit.symbol}</span>`;
+        slot.appendChild(el);
+        clearTimeout(this._revealTimeout);
+        this._revealTimeout = setTimeout(() => {
+            el.classList.add('fade-out');
+            setTimeout(() => el.remove(), 350);
+        }, 900);
+    }
+
+    /* ================= FX ================= */
+
+    showFloatingText(text, color) {
+        const layer = document.getElementById('fx-layer');
+        const el = document.createElement('div');
+        el.className = 'float-text';
+        el.textContent = text;
+        el.style.color = color;
+        layer.appendChild(el);
+        setTimeout(() => el.remove(), 1000);
+    }
+
+    spawnParticles(count, color) {
+        const layer = document.getElementById('fx-layer');
+        for (let i = 0; i < count; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.background = color;
+            p.style.left = '50%';
+            p.style.top = '50%';
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 50 + Math.random() * 90;
+            p.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+            p.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
+            p.style.animationDelay = `${Math.random() * 0.1}s`;
+            layer.appendChild(p);
+            setTimeout(() => p.remove(), 950);
         }
-
-        document.body.appendChild(floatEl);
-
-        requestAnimationFrame(() => {
-            floatEl.style.top = '30%';
-            floatEl.style.opacity = '0';
-        });
-
-        setTimeout(() => floatEl.remove(), 800);
     }
 
-    showNotification(msg) {
+    screenFlash(color) {
+        const el = document.createElement('div');
+        el.className = 'screen-flash';
+        el.style.background = `radial-gradient(circle at 50% 45%, ${color}, transparent 70%)`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 500);
+    }
+
+    bumpMoney() {
+        const el = document.querySelector('.money-display');
+        el.classList.remove('bump');
+        void el.offsetWidth;
+        el.classList.add('bump');
+    }
+
+    showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.classList.remove('hidden');
+        clearTimeout(this._toastTimeout);
+        this._toastTimeout = setTimeout(() => toast.classList.add('hidden'), 2400);
+
         const hint = document.querySelector('.hint-text');
-        if(!hint) return;
-        const original = hint.innerText;
-        hint.innerText = msg;
-        hint.style.color = "#fbc531";
-        setTimeout(() => {
-            hint.innerText = original;
-            hint.style.color = "#777";
-        }, 2000);
+        if (hint) {
+            hint.textContent = msg;
+            hint.classList.add('flash');
+            clearTimeout(this._hintTimeout);
+            this._hintTimeout = setTimeout(() => {
+                hint.textContent = 'Haz clic en el mazo para revelar una carta';
+                hint.classList.remove('flash');
+            }, 2400);
+        }
     }
+
+    /* ================= AUDIO (WebAudio, sin archivos) ================= */
+
+    initAudio() {
+        this.audioCtx = null; // se crea en el primer gesto del usuario
+    }
+
+    ensureAudio() {
+        if (!this.audioCtx) {
+            try { this.audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+            catch (e) { this.audioCtx = null; }
+        }
+        if (this.audioCtx && this.audioCtx.state === 'suspended') this.audioCtx.resume();
+    }
+
+    tone(freq, dur, type = 'sine', vol = 0.12, when = 0) {
+        if (!this.soundOn || !this.audioCtx) return;
+        const t = this.audioCtx.currentTime + when;
+        const osc = this.audioCtx.createOscillator();
+        const gain = this.audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, t);
+        gain.gain.setValueAtTime(vol, t);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        osc.connect(gain); gain.connect(this.audioCtx.destination);
+        osc.start(t); osc.stop(t + dur + 0.02);
+    }
+
+    playCardSound(flags) {
+        this.ensureAudio();
+        if (flags.isBurned) { this.tone(140, 0.25, 'sawtooth', 0.1); return; }
+        if (flags.triggeredJoker) { [523, 659, 784, 1047].forEach((f, i) => this.tone(f, 0.18, 'triangle', 0.14, i * 0.08)); return; }
+        if (flags.isElectrified) { this.tone(1200, 0.08, 'square', 0.08); this.tone(1600, 0.12, 'square', 0.08, 0.06); return; }
+        if (flags.isCritical) { this.tone(660, 0.1, 'triangle', 0.13); this.tone(880, 0.14, 'triangle', 0.13, 0.07); return; }
+        this.tone(440 + Math.random() * 120, 0.09, 'triangle', 0.09);
+    }
+
+    playSound(kind) {
+        this.ensureAudio();
+        switch (kind) {
+            case 'buy': this.tone(523, 0.1, 'triangle', 0.12); this.tone(784, 0.14, 'triangle', 0.12, 0.08); break;
+            case 'error': this.tone(180, 0.18, 'sawtooth', 0.08); break;
+            case 'shuffle': this.tone(300, 0.08, 'triangle', 0.07); this.tone(360, 0.08, 'triangle', 0.07, 0.1); this.tone(420, 0.1, 'triangle', 0.07, 0.2); break;
+            case 'reward': [392, 523, 659].forEach((f, i) => this.tone(f, 0.16, 'triangle', 0.12, i * 0.1)); break;
+            case 'perk': [523, 659, 784, 1047].forEach((f, i) => this.tone(f, 0.15, 'triangle', 0.13, i * 0.07)); break;
+            case 'stampede': [330, 392, 494, 587, 740].forEach((f, i) => this.tone(f, 0.12, 'square', 0.07, i * 0.05)); break;
+        }
+    }
+
+    toggleSound() {
+        this.soundOn = !this.soundOn;
+        this.updateSoundButton();
+        this.saveGame();
+        if (this.soundOn) { this.ensureAudio(); this.tone(660, 0.1, 'triangle', 0.1); }
+    }
+
+    updateSoundButton() {
+        const btn = document.getElementById('btn-sound');
+        btn.textContent = this.soundOn ? '🔊 Sonido' : '🔇 Silencio';
+        btn.classList.toggle('muted', !this.soundOn);
+    }
+
+    /* ================= UI GENERAL ================= */
 
     updateUI() {
-        document.getElementById('money').textContent = this.money.toLocaleString();
+        document.getElementById('money').textContent = this.money.toLocaleString('es');
         document.getElementById('deck-count').textContent = this.deck.length;
+        document.getElementById('deck-total').textContent = this.totalDeckSize;
         document.getElementById('crit-chance-display').textContent = (this.upgrades.critChance.effect * 100).toFixed(1) + '%';
         document.getElementById('cards-discovered').textContent = this.activePerks.length;
+        document.getElementById('cards-drawn-total').textContent = this.cardsDrawnTotal.toLocaleString('es');
+        document.getElementById('best-card').textContent = '$' + this.bestCard.toLocaleString('es');
+        document.getElementById('decks-shuffled').textContent = this.decksShuffled;
+        document.getElementById('total-crits').textContent = this.totalCrits.toLocaleString('es');
+
+        // Barra de progreso del hito
+        const span = this.nextMilestone - this.prevMilestone;
+        const progress = Math.max(0, Math.min(1, (this.cardsDrawnTotal - this.prevMilestone) / span));
+        document.getElementById('milestone-fill').style.width = (progress * 100) + '%';
+        document.getElementById('milestone-current').textContent = this.cardsDrawnTotal.toLocaleString('es');
+        document.getElementById('milestone-target').textContent = this.nextMilestone.toLocaleString('es');
+
         this.renderPerksBar();
     }
 
     renderPerksBar() {
-        const perksContainer = document.getElementById('active-perks-bar');
-        if (!perksContainer) return;
-
-        perksContainer.innerHTML = '';
-        
+        const container = document.getElementById('active-perks-bar');
+        container.innerHTML = '';
+        if (this.activePerks.length === 0) {
+            container.innerHTML = '<span class="perks-empty">Aún no tienes perks activos — revela 50 cartas para tu primer paquete ✨</span>';
+            return;
+        }
         this.activePerks.forEach(perkId => {
-            const perkData = PERK_DATABASE.find(p => p.id === perkId);
-            if (perkData) {
-                const span = document.createElement('span');
-                span.className = 'perk-badge';
-                span.style.borderColor = RARITY_COLORS[perkData.rarity];
-                span.style.color = RARITY_COLORS[perkData.rarity];
-                
-                // Imagen o Emoji
-                const visual = perkData.imgUrl 
-                    ? `<img src="${perkData.imgUrl}" alt="">` 
-                    : perkData.icon;
-                    
-                span.innerHTML = `${visual} ${perkData.title}`;
-                span.title = perkData.description;
-                perksContainer.appendChild(span);
-            }
+            const perk = PERK_DATABASE.find(p => p.id === perkId);
+            if (!perk) return;
+            const span = document.createElement('span');
+            span.className = 'perk-badge';
+            const rc = RARITY_COLORS[perk.rarity];
+            span.style.borderColor = rc;
+            span.style.color = rc;
+            const visual = perk.imgUrl
+                ? `<img src="${perk.imgUrl}" alt="" onerror="this.outerHTML='${perk.icon}'">`
+                : perk.icon;
+            span.innerHTML = `${visual} ${perk.title}`;
+            span.title = perk.description;
+            container.appendChild(span);
         });
     }
 
@@ -641,101 +701,190 @@ class WolfyClicker {
     openCarddex() {
         const grid = document.getElementById('carddex-grid');
         grid.innerHTML = '';
-        
         PERK_DATABASE.forEach(perk => {
-            const isDiscovered = this.activePerks.includes(perk.id);
+            const discovered = this.activePerks.includes(perk.id);
             const entry = document.createElement('div');
-            entry.className = `carddex-entry ${isDiscovered ? 'discovered' : 'locked'}`;
-            
-            const visual = perk.imgUrl 
-                ? `<img src="${perk.imgUrl}" alt="${perk.title}">` 
-                : `<div style="font-size:2rem;">${perk.icon}</div>`;
+            entry.className = `carddex-entry ${discovered ? 'discovered' : 'locked'}`;
+            const rc = RARITY_COLORS[perk.rarity];
+            if (discovered) entry.style.borderColor = rc;
+
+            const visual = perk.imgUrl
+                ? `<img src="${perk.imgUrl}" alt="" onerror="this.outerHTML='<div class=cd-icon>${perk.icon}</div>'">`
+                : `<div class="cd-icon">${discovered ? perk.icon : '❓'}</div>`;
 
             entry.innerHTML = `
                 ${visual}
-                <div class="name">${isDiscovered ? perk.title : '???'}</div>
-                <div class="desc">${isDiscovered ? perk.description : 'Bloqueado'}</div>
-                <div class="status">${isDiscovered ? '✓ Activo' : '??? Pendiente'}</div>
-            `;
+                <div class="name" style="color:${discovered ? rc : 'inherit'}">${discovered ? perk.title : '???'}</div>
+                <div class="desc">${discovered ? perk.description : 'Sigue revelando cartas para descubrirlo'}</div>
+                <div class="status">${discovered ? '✓ Activo' : '🔒 Pendiente'}</div>`;
             grid.appendChild(entry);
         });
-        
         document.getElementById('carddex-modal').classList.remove('hidden');
     }
 
+    /* ================= GUARDADO ================= */
+
     saveGame() {
-        localStorage.setItem('wolfyClickerSave_vFinal_Integrated', JSON.stringify({
+        try {
+            localStorage.setItem(SAVE_KEY, JSON.stringify(this.serialize()));
+        } catch (e) { console.warn('No se pudo guardar:', e); }
+    }
+
+    serialize() {
+        return {
+            version: 2,
             money: this.money,
             cardsDrawnTotal: this.cardsDrawnTotal,
             nextMilestone: this.nextMilestone,
+            prevMilestone: this.prevMilestone,
             activePerks: this.activePerks,
             upgrades: this.upgrades,
-            history: this.history.map(h => ({ 
-                suitId: h.originalCard.suit.id, 
-                rank: h.originalCard.rank, 
-                finalValue: h.finalValue,
-                flags: h.flags,
-                isStampeded: h.isStampeded
-            }))
-        }));
+            bestCard: this.bestCard,
+            decksShuffled: this.decksShuffled,
+            totalCrits: this.totalCrits,
+            soundOn: this.soundOn,
+            pendingReward: this.pendingReward,
+            history: this.history
+                .filter(h => h.originalCard && h.originalCard.suit) // fix: no guardar cartas corruptas
+                .map(h => ({
+                    suitId: h.originalCard.suit.id,
+                    rank: h.originalCard.rank,
+                    finalValue: h.finalValue,
+                    flags: h.flags || {},
+                    isStampeded: !!h.isStampeded
+                }))
+        };
+    }
+
+    applySaveData(data) {
+        this.money = Number(data.money) || 0;
+        this.cardsDrawnTotal = Number(data.cardsDrawnTotal) || 0;
+        this.nextMilestone = Number(data.nextMilestone) || 50;
+        this.prevMilestone = Number(data.prevMilestone) || Math.max(0, this.nextMilestone - this.milestoneStep);
+        this.activePerks = Array.isArray(data.activePerks)
+            ? data.activePerks.filter(id => PERK_DATABASE.some(p => p.id === id)) : [];
+        if (data.upgrades) {
+            for (const key of ['baseValue', 'critChance', 'critMult']) {
+                if (data.upgrades[key]) {
+                    this.upgrades[key] = {
+                        level: Number(data.upgrades[key].level) || 0,
+                        cost: Number(data.upgrades[key].cost) || this.upgrades[key].cost,
+                        effect: Number(data.upgrades[key].effect) ?? this.upgrades[key].effect
+                    };
+                }
+            }
+        }
+        this.bestCard = Number(data.bestCard) || 0;
+        this.decksShuffled = Number(data.decksShuffled) || 0;
+        this.totalCrits = Number(data.totalCrits) || 0;
+        this.soundOn = data.soundOn !== false;
+        this.pendingReward = !!data.pendingReward;
+
+        this.history = (Array.isArray(data.history) ? data.history : []).map(h => {
+            const suitObj = SUITS.find(s => s.id === h.suitId);
+            if (!suitObj) return null; // fix: descartar entradas inválidas
+            return {
+                originalCard: { suit: suitObj, rank: h.rank },
+                finalValue: Number(h.finalValue) || 0,
+                flags: h.flags || {},
+                isStampeded: !!h.isStampeded
+            };
+        }).filter(Boolean);
     }
 
     loadGame() {
-        const saved = localStorage.getItem('wolfyClickerSave_vFinal_Integrated');
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                this.money = data.money || 0;
-                this.cardsDrawnTotal = data.cardsDrawnTotal || 0;
-                this.nextMilestone = data.nextMilestone || 50;
-                this.activePerks = data.activePerks || [];
-                
-                if (data.upgrades) this.upgrades = data.upgrades;
-
-                this.history = (data.history || []).map(h => {
-                    const suitObj = SUITS.find(s => s.id === h.suitId);
-                    return {
-                        originalCard: { suit: suitObj, rank: h.rank },
-                        finalValue: h.finalValue,
-                        flags: h.flags || {},
-                        isStampeded: h.isStampeded || false
-                    };
-                });
-                
-                this.renderHistory();
-                this.renderPerksBar();
-            } catch(e) {
-                console.error("Error cargando partida", e);
-            }
-        }
+        try {
+            const saved = localStorage.getItem(SAVE_KEY);
+            if (saved) this.applySaveData(JSON.parse(saved));
+        } catch (e) { console.error('Error cargando partida:', e); }
     }
 
+    exportSave() {
+        const blob = new Blob([JSON.stringify(this.serialize(), null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `wolfy-partida-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.showToast('⬇️ Partida exportada');
+    }
+
+    importSave(file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const data = JSON.parse(reader.result);
+                if (typeof data.money !== 'number') throw new Error('Formato inválido');
+                this.applySaveData(data);
+                this.initDeck();
+                this.saveGame();
+                this.updateUI(); this.renderShop(); this.renderHistory(); this.updateSoundButton();
+                document.getElementById('save-modal').classList.add('hidden');
+                this.showToast('⬆️ ¡Partida importada correctamente!');
+                if (this.pendingReward) this.triggerRewardSelection();
+            } catch (e) {
+                this.showToast('❌ Archivo de partida inválido');
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    resetGame() {
+        if (!confirm('🗑️ ¿Seguro que quieres borrar toda tu partida? Esta acción no se puede deshacer.')) return;
+        localStorage.removeItem(SAVE_KEY);
+        location.reload();
+    }
+
+    /* ================= EVENTOS ================= */
+
     bindEvents() {
-        document.getElementById('btn-deck').addEventListener('click', () => this.revealCard());
+        document.getElementById('btn-deck').addEventListener('click', () => { this.ensureAudio(); this.revealCard(); });
         document.getElementById('buy-base-val').addEventListener('click', () => this.buyUpgrade('baseValue'));
         document.getElementById('buy-crit-pct').addEventListener('click', () => this.buyUpgrade('critChance'));
         document.getElementById('buy-crit-mult').addEventListener('click', () => this.buyUpgrade('critMult'));
-        
-        // Carddex Events
+
         document.getElementById('btn-carddex').addEventListener('click', () => this.openCarddex());
-        document.querySelector('.close-btn').addEventListener('click', () => {
-            document.getElementById('carddex-modal').classList.add('hidden');
+        document.getElementById('btn-sound').addEventListener('click', () => this.toggleSound());
+        document.getElementById('btn-save-menu').addEventListener('click', () => document.getElementById('save-modal').classList.remove('hidden'));
+
+        document.getElementById('btn-export').addEventListener('click', () => this.exportSave());
+        document.getElementById('btn-import').addEventListener('click', () => document.getElementById('import-file').click());
+        document.getElementById('import-file').addEventListener('change', (e) => {
+            if (e.target.files[0]) this.importSave(e.target.files[0]);
+            e.target.value = '';
         });
-        document.getElementById('carddex-modal').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('carddex-modal')) {
-                document.getElementById('carddex-modal').classList.add('hidden');
-            }
+        document.getElementById('btn-reset').addEventListener('click', () => this.resetGame());
+
+        // Cerrar modales (X y clic fuera)
+        document.querySelectorAll('.close-btn').forEach(btn => {
+            btn.addEventListener('click', () => document.getElementById(btn.dataset.close).classList.add('hidden'));
+        });
+        ['carddex-modal', 'save-modal'].forEach(id => {
+            const modal = document.getElementById(id);
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
         });
 
         document.addEventListener('keydown', (e) => {
-            if ((e.code === 'Space' || e.code === 'Enter') && document.getElementById('reward-modal').classList.contains('hidden')) {
+            if (e.code === 'Escape') {
+                document.getElementById('carddex-modal').classList.add('hidden');
+                document.getElementById('save-modal').classList.add('hidden');
+                return;
+            }
+            const anyModalOpen = ['reward-modal', 'carddex-modal', 'save-modal']
+                .some(id => !document.getElementById(id).classList.contains('hidden'));
+            if ((e.code === 'Space' || e.code === 'Enter') && !anyModalOpen) {
                 e.preventDefault();
+                this.ensureAudio();
                 this.revealCard();
             }
         });
+
+        // Guardar al salir
+        window.addEventListener('beforeunload', () => this.saveGame());
     }
 }
 
-window.onload = () => {
-    new WolfyClicker();
-};
+window.addEventListener('DOMContentLoaded', () => {
+    window.wolfyGame = new WolfyClicker();
+});
