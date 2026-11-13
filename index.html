@@ -156,6 +156,12 @@
     <div class="modal-content save-modal-content">
         <button class="close-btn" data-close="save-modal" aria-label="Cerrar">&times;</button>
         <h2>💾 Gestión de Partida</h2>
+        <div class="save-summary">
+            <div class="save-summary-row"><span>Dinero</span><strong id="summary-money">$0</strong></div>
+            <div class="save-summary-row"><span>Cartas reveladas</span><strong id="summary-cards">0</strong></div>
+            <div class="save-summary-row"><span>Perks activos</span><strong id="summary-perks">0 / 10</strong></div>
+            <div class="save-summary-row"><span>Mazos barajados</span><strong id="summary-decks">0</strong></div>
+        </div>
         <div class="save-actions">
             <button id="btn-export" class="btn secondary">⬇️ Exportar partida (.json)</button>
             <button id="btn-import" class="btn secondary">⬆️ Importar partida</button>
@@ -163,6 +169,36 @@
             <button id="btn-reset" class="btn danger">🗑️ Reiniciar partida</button>
         </div>
         <p class="modal-sub">La partida se guarda automáticamente en este navegador.</p>
+    </div>
+</div>
+
+<!-- MODAL CONFIRMAR REINICIO -->
+<div id="reset-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="reset-title">
+    <div class="modal-content reset-modal-content">
+        <div class="reset-wolf">🐺</div>
+        <h2 id="reset-title">¿Soltar a los lobitos?</h2>
+        <p class="modal-sub">El Lobito invisible recogerá la mesa y preparará un mazo nuevo desde cero.</p>
+
+        <div class="reset-loss">
+            <div class="reset-loss-title">Se perderá para siempre:</div>
+            <ul>
+                <li><span>💰 Dinero acumulado</span><strong id="reset-money">$0</strong></li>
+                <li><span>🛒 Niveles de mejora</span><strong id="reset-upgrades">0</strong></li>
+                <li><span>✨ Perks descubiertos</span><strong id="reset-perks">0 / 10</strong></li>
+                <li><span>🃏 Cartas reveladas</span><strong id="reset-cards">0</strong></li>
+            </ul>
+        </div>
+
+        <label class="reset-check">
+            <input type="checkbox" id="reset-confirm-check">
+            <span>Entiendo que esto no se puede deshacer</span>
+        </label>
+
+        <div class="reset-actions">
+            <button id="btn-cancel-reset" class="btn secondary">↩️ Mejor no</button>
+            <button id="btn-confirm-reset" class="btn danger strong" disabled>🗑️ Reiniciar todo</button>
+        </div>
+        <p class="reset-tip">Consejo: puedes <strong>exportar</strong> tu partida antes de reiniciar.</p>
     </div>
 </div>
 
