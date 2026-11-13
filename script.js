@@ -1,6 +1,6 @@
 /**
  * DRAW A WOLFY CARD — Deck Incremental
- * Versión integrada y corregida.
+ * Versión integrada: perks, tienda, Carddex, sonido y reinicio con interfaz propia.
  */
 
 const SUITS = [
@@ -37,6 +37,16 @@ const PERK_DATABASE = [
 ];
 
 const SAVE_KEY = 'wolfyClickerSave_vFinal_Integrated';
+const LEGACY_SAVE_KEYS = ['wolfyClickerSave_vFinal_Integrated', 'wolfyClickerSave_v2', 'wolfyClickerSave'];
+const MODAL_IDS = ['reward-modal', 'carddex-modal', 'save-modal', 'reset-modal'];
+
+function createDefaultUpgrades() {
+    return {
+        baseValue: { level: 0, cost: 10, effect: 0 },
+        critChance: { level: 0, cost: 25, effect: 0.05 },
+        critMult: { level: 0, cost: 50, effect: 2.0 }
+    };
+}
 
 class WolfyClicker {
     constructor() {
@@ -59,19 +69,22 @@ class WolfyClicker {
         this.isShuffling = false;
         this.pendingReward = false;
 
-        // Estadísticas extra
         this.bestCard = 0;
         this.decksShuffled = 0;
         this.totalCrits = 0;
         this.soundOn = true;
 
-        this.upgrades = {
-            baseValue: { level: 0, cost: 10, effect: 0 },
-            critChance: { level: 0, cost: 25, effect: 0.05 },
-            critMult: { level: 0, cost: 50, effect: 2.0 }
-        };
+        // Control de timers / reinicio
+        this._resetting = false;
+        this._shuffleTimer = null;
+        this._rewardTimer = null;
+        this._revealTimeout = null;
+        this._toastTimeout = null;
+        this._hintTimeout = null;
+        this._lastFocused = null;
 
-        // Orden correcto: cargar ANTES de construir el mazo (fix Barajas Gemelas)
+        this.upgrades = createDefaultUpgrades();
+
         this.loadGame();
         this.initDeck();
         this.bindEvents();
@@ -159,7 +172,9 @@ class WolfyClicker {
         const btnCrit = document.getElementById('buy-crit-pct');
         btnCrit.disabled = this.money < u.critChance.cost || critMaxed;
         btnCrit.classList.toggle('maxed', critMaxed);
-        btnCrit.innerHTML = critMaxed ? '🏆 MÁXIMO (90%)' : `Comprar ($<span id="cost-crit-pct">${u.critChance.cost.toLocaleString('es')}</span>)`;
+        btnCrit.innerHTML = critMaxed
+            ? '🏆 MÁXIMO (90%)'
+            : `Comprar ($<span id="cost-crit-pct">${u.critChance.cost.toLocaleString('es')}</span>)`;
         document.getElementById('buy-crit-mult').disabled = this.money < u.critMult.cost;
     }
 
@@ -238,7 +253,6 @@ class WolfyClicker {
 
                 case 'instant_reveal_event':
                     if (!isInstantReveal && Math.random() < perk.params.chance) {
-                        // Devuelve la carta al mazo: la estampida revelará TODO incluido ella
                         this.deck.push(card);
                         this.currentDeckIndex--;
                         this.cardsDrawnTotal--;
@@ -254,7 +268,6 @@ class WolfyClicker {
         }
 
         this.lastCardWasAce = (card.rank === 'A');
-
         return { finalValue: Math.floor(value), flags, originalCard: card };
     }
 
@@ -300,10 +313,8 @@ class WolfyClicker {
     /* ================= REVELAR ================= */
 
     revealCard() {
-        if (this.isShuffling) return;
-        if (!document.getElementById('reward-modal').classList.contains('hidden')) return;
-        if (!document.getElementById('carddex-modal').classList.contains('hidden')) return;
-        if (!document.getElementById('save-modal').classList.contains('hidden')) return;
+        if (this.isShuffling || this._resetting) return;
+        if (MODAL_IDS.some(id => !document.getElementById(id).classList.contains('hidden'))) return;
 
         if (this.deck.length === 0) { this.autoShuffle(); return; }
 
@@ -351,8 +362,10 @@ class WolfyClicker {
             this.prevMilestone = this.nextMilestone;
             this.nextMilestone += this.milestoneStep;
             this.pendingReward = true;
-            // Pequeño delay para que se vea la carta antes del modal
-            setTimeout(() => this.triggerRewardSelection(), 600);
+            clearTimeout(this._rewardTimer);
+            this._rewardTimer = setTimeout(() => {
+                if (!this._resetting) this.triggerRewardSelection();
+            }, 600);
         }
     }
 
@@ -368,7 +381,6 @@ class WolfyClicker {
             return;
         }
 
-        const modal = document.getElementById('reward-modal');
         const container = document.getElementById('reward-options');
         container.innerHTML = '';
 
@@ -396,14 +408,14 @@ class WolfyClicker {
         });
 
         this.playSound('reward');
-        modal.classList.remove('hidden');
+        this.openModal('reward-modal');
     }
 
     selectPerk(perkId) {
         if (this.activePerks.includes(perkId)) return;
         this.activePerks.push(perkId);
         this.pendingReward = false;
-        document.getElementById('reward-modal').classList.add('hidden');
+        this.closeModal('reward-modal');
 
         const perk = PERK_DATABASE.find(p => p.id === perkId);
         this.playSound('perk');
@@ -411,7 +423,7 @@ class WolfyClicker {
         this.showToast(`${perk.icon} ¡Nuevo perk: ${perk.title}!`);
 
         if (perkId === 'twin_decks') {
-            this.initDeck(); // reconstruye con 104 inmediatamente
+            this.initDeck();
             this.showToast('🃏 ¡Barajas Gemelas activadas! Mazo nuevo de 104 cartas.');
         }
 
@@ -425,7 +437,7 @@ class WolfyClicker {
     /* ================= BARAJADO ================= */
 
     autoShuffle(fromStampede = false) {
-        if (this.isShuffling) return;
+        if (this.isShuffling || this._resetting) return;
         this.isShuffling = true;
         const btn = document.getElementById('btn-deck');
         btn.disabled = true;
@@ -434,22 +446,31 @@ class WolfyClicker {
         this.playSound('shuffle');
 
         const delay = this.activePerks.includes('twin_decks') ? 1500 : 800;
-        setTimeout(() => {
+        clearTimeout(this._shuffleTimer);
+        this._shuffleTimer = setTimeout(() => {
+            if (this._resetting) return;
             this.initDeck();
             this.decksShuffled++;
             this.isShuffling = false;
             btn.disabled = false;
             btn.classList.remove('shuffling');
-            btn.innerHTML = `
-                <div class="deck-back-design">
-                    <span class="icon">🐺</span>
-                    <span class="text">REVELAR</span>
-                    <span class="deck-hint-mini">clic · espacio · enter</span>
-                </div>`;
+            this.restoreDeckButton();
             if (!fromStampede) this.showToast('🌙 El Lobito invisible barajó un mazo nuevo');
             this.saveGame();
             this.updateUI();
         }, delay);
+    }
+
+    restoreDeckButton() {
+        const btn = document.getElementById('btn-deck');
+        btn.disabled = false;
+        btn.classList.remove('shuffling');
+        btn.innerHTML = `
+            <div class="deck-back-design">
+                <span class="icon">🐺</span>
+                <span class="text">REVELAR</span>
+                <span class="deck-hint-mini">clic · espacio · enter</span>
+            </div>`;
     }
 
     /* ================= HISTORIAL / MESA ================= */
@@ -469,7 +490,7 @@ class WolfyClicker {
         }
         this.history.forEach((item, index) => {
             const card = item.originalCard;
-            if (!card || !card.suit) return; // fix: nunca renderizar cartas corruptas
+            if (!card || !card.suit) return;
             const div = document.createElement('div');
             let extra = '';
             const f = item.flags || {};
@@ -587,11 +608,9 @@ class WolfyClicker {
         }
     }
 
-    /* ================= AUDIO (WebAudio, sin archivos) ================= */
+    /* ================= AUDIO ================= */
 
-    initAudio() {
-        this.audioCtx = null; // se crea en el primer gesto del usuario
-    }
+    initAudio() { this.audioCtx = null; }
 
     ensureAudio() {
         if (!this.audioCtx) {
@@ -631,6 +650,7 @@ class WolfyClicker {
             case 'reward': [392, 523, 659].forEach((f, i) => this.tone(f, 0.16, 'triangle', 0.12, i * 0.1)); break;
             case 'perk': [523, 659, 784, 1047].forEach((f, i) => this.tone(f, 0.15, 'triangle', 0.13, i * 0.07)); break;
             case 'stampede': [330, 392, 494, 587, 740].forEach((f, i) => this.tone(f, 0.12, 'square', 0.07, i * 0.05)); break;
+            case 'reset': [523, 392, 330, 262].forEach((f, i) => this.tone(f, 0.2, 'sine', 0.1, i * 0.12)); break;
         }
     }
 
@@ -660,7 +680,6 @@ class WolfyClicker {
         document.getElementById('decks-shuffled').textContent = this.decksShuffled;
         document.getElementById('total-crits').textContent = this.totalCrits.toLocaleString('es');
 
-        // Barra de progreso del hito
         const span = this.nextMilestone - this.prevMilestone;
         const progress = Math.max(0, Math.min(1, (this.cardsDrawnTotal - this.prevMilestone) / span));
         document.getElementById('milestone-fill').style.width = (progress * 100) + '%';
@@ -719,15 +738,42 @@ class WolfyClicker {
                 <div class="status">${discovered ? '✓ Activo' : '🔒 Pendiente'}</div>`;
             grid.appendChild(entry);
         });
-        document.getElementById('carddex-modal').classList.remove('hidden');
+        this.openModal('carddex-modal');
+    }
+
+    /* ================= MODALES ================= */
+
+    openModal(id) {
+        const modal = document.getElementById(id);
+        if (!modal.classList.contains('hidden')) return;
+        this._lastFocused = document.activeElement;
+        modal.classList.remove('hidden');
+        document.body.classList.add('modal-open');
+        const focusable = modal.querySelector('button:not([disabled]), input, [tabindex]');
+        if (focusable) setTimeout(() => focusable.focus(), 60);
+    }
+
+    closeModal(id) {
+        document.getElementById(id).classList.add('hidden');
+        if (!MODAL_IDS.some(mid => !document.getElementById(mid).classList.contains('hidden'))) {
+            document.body.classList.remove('modal-open');
+            if (this._lastFocused && document.contains(this._lastFocused)) {
+                this._lastFocused.focus();
+            }
+        }
+    }
+
+    closeAllModals() {
+        MODAL_IDS.forEach(id => document.getElementById(id).classList.add('hidden'));
+        document.body.classList.remove('modal-open');
     }
 
     /* ================= GUARDADO ================= */
 
     saveGame() {
-        try {
-            localStorage.setItem(SAVE_KEY, JSON.stringify(this.serialize()));
-        } catch (e) { console.warn('No se pudo guardar:', e); }
+        if (this._resetting) return;
+        try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.serialize())); }
+        catch (e) { console.warn('No se pudo guardar:', e); }
     }
 
     serialize() {
@@ -745,7 +791,7 @@ class WolfyClicker {
             soundOn: this.soundOn,
             pendingReward: this.pendingReward,
             history: this.history
-                .filter(h => h.originalCard && h.originalCard.suit) // fix: no guardar cartas corruptas
+                .filter(h => h.originalCard && h.originalCard.suit)
                 .map(h => ({
                     suitId: h.originalCard.suit.id,
                     rank: h.originalCard.rank,
@@ -760,20 +806,26 @@ class WolfyClicker {
         this.money = Number(data.money) || 0;
         this.cardsDrawnTotal = Number(data.cardsDrawnTotal) || 0;
         this.nextMilestone = Number(data.nextMilestone) || 50;
-        this.prevMilestone = Number(data.prevMilestone) || Math.max(0, this.nextMilestone - this.milestoneStep);
+        this.prevMilestone = Number.isFinite(Number(data.prevMilestone))
+            ? Number(data.prevMilestone)
+            : Math.max(0, this.nextMilestone - this.milestoneStep);
         this.activePerks = Array.isArray(data.activePerks)
             ? data.activePerks.filter(id => PERK_DATABASE.some(p => p.id === id)) : [];
+
+        const defaults = createDefaultUpgrades();
+        this.upgrades = defaults;
         if (data.upgrades) {
-            for (const key of ['baseValue', 'critChance', 'critMult']) {
-                if (data.upgrades[key]) {
-                    this.upgrades[key] = {
-                        level: Number(data.upgrades[key].level) || 0,
-                        cost: Number(data.upgrades[key].cost) || this.upgrades[key].cost,
-                        effect: Number(data.upgrades[key].effect) ?? this.upgrades[key].effect
-                    };
-                }
+            for (const key of Object.keys(defaults)) {
+                const src = data.upgrades[key];
+                if (!src) continue;
+                this.upgrades[key] = {
+                    level: Number(src.level) || 0,
+                    cost: Number(src.cost) || defaults[key].cost,
+                    effect: Number.isFinite(Number(src.effect)) ? Number(src.effect) : defaults[key].effect
+                };
             }
         }
+
         this.bestCard = Number(data.bestCard) || 0;
         this.decksShuffled = Number(data.decksShuffled) || 0;
         this.totalCrits = Number(data.totalCrits) || 0;
@@ -782,7 +834,7 @@ class WolfyClicker {
 
         this.history = (Array.isArray(data.history) ? data.history : []).map(h => {
             const suitObj = SUITS.find(s => s.id === h.suitId);
-            if (!suitObj) return null; // fix: descartar entradas inválidas
+            if (!suitObj) return null;
             return {
                 originalCard: { suit: suitObj, rank: h.rank },
                 finalValue: Number(h.finalValue) || 0,
@@ -799,14 +851,28 @@ class WolfyClicker {
         } catch (e) { console.error('Error cargando partida:', e); }
     }
 
+    refreshSaveSummary() {
+        const levels = Object.values(this.upgrades).reduce((sum, u) => sum + u.level, 0);
+        document.getElementById('summary-money').textContent = '$' + this.money.toLocaleString('es');
+        document.getElementById('summary-cards').textContent = this.cardsDrawnTotal.toLocaleString('es');
+        document.getElementById('summary-perks').textContent = `${this.activePerks.length} / ${PERK_DATABASE.length}`;
+        document.getElementById('summary-decks').textContent = this.decksShuffled.toLocaleString('es');
+        document.getElementById('reset-money').textContent = '$' + this.money.toLocaleString('es');
+        document.getElementById('reset-upgrades').textContent = levels + (levels === 1 ? ' nivel' : ' niveles');
+        document.getElementById('reset-perks').textContent = `${this.activePerks.length} / ${PERK_DATABASE.length}`;
+        document.getElementById('reset-cards').textContent = this.cardsDrawnTotal.toLocaleString('es');
+    }
+
     exportSave() {
         const blob = new Blob([JSON.stringify(this.serialize(), null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `wolfy-partida-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(url);
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
         this.showToast('⬇️ Partida exportada');
     }
 
@@ -820,7 +886,7 @@ class WolfyClicker {
                 this.initDeck();
                 this.saveGame();
                 this.updateUI(); this.renderShop(); this.renderHistory(); this.updateSoundButton();
-                document.getElementById('save-modal').classList.add('hidden');
+                this.closeModal('save-modal');
                 this.showToast('⬆️ ¡Partida importada correctamente!');
                 if (this.pendingReward) this.triggerRewardSelection();
             } catch (e) {
@@ -830,10 +896,76 @@ class WolfyClicker {
         reader.readAsText(file);
     }
 
+    /* ================= REINICIO CON INTERFAZ PROPIA ================= */
+
     resetGame() {
-        if (!confirm('🗑️ ¿Seguro que quieres borrar toda tu partida? Esta acción no se puede deshacer.')) return;
-        localStorage.removeItem(SAVE_KEY);
-        location.reload();
+        this.refreshSaveSummary();
+        const check = document.getElementById('reset-confirm-check');
+        check.checked = false;
+        check.parentElement.classList.remove('checked');
+        document.getElementById('btn-confirm-reset').disabled = true;
+        this.openModal('reset-modal');
+    }
+
+    cancelReset() {
+        this.closeModal('reset-modal');
+    }
+
+    confirmReset() {
+        if (!document.getElementById('reset-confirm-check').checked) return;
+        this._resetting = true;
+
+        clearTimeout(this._shuffleTimer);
+        clearTimeout(this._rewardTimer);
+        clearTimeout(this._revealTimeout);
+        clearTimeout(this._toastTimeout);
+        clearTimeout(this._hintTimeout);
+
+        try { LEGACY_SAVE_KEYS.forEach(k => localStorage.removeItem(k)); }
+        catch (e) { console.warn('No se pudo borrar localStorage:', e); }
+
+        this.money = 0;
+        this.deck = [];
+        this.history = [];
+        this.cardsDrawnTotal = 0;
+        this.nextMilestone = 50;
+        this.prevMilestone = 0;
+        this.activePerks = [];
+        this.currentDeckIndex = 0;
+        this.totalDeckSize = 52;
+        this.lastCardWasAce = false;
+        this.lastClickTime = 0;
+        this.isShuffling = false;
+        this.pendingReward = false;
+        this.bestCard = 0;
+        this.decksShuffled = 0;
+        this.totalCrits = 0;
+        this.upgrades = createDefaultUpgrades();
+
+        this.closeAllModals();
+        document.getElementById('reveal-slot').innerHTML = '';
+        document.getElementById('fx-layer').innerHTML = '';
+        document.querySelectorAll('.screen-flash').forEach(el => el.remove());
+        const toast = document.getElementById('toast');
+        toast.textContent = '';
+        toast.classList.add('hidden');
+        const hint = document.querySelector('.hint-text');
+        hint.textContent = 'Haz clic en el mazo para revelar una carta';
+        hint.classList.remove('flash');
+
+        this.restoreDeckButton();
+        this.initDeck();
+        this.updateUI();
+        this.renderShop();
+        this.renderHistory();
+        this.renderCarddexInitial();
+
+        this._resetting = false;
+        this.saveGame();
+        this.playSound('reset');
+        this.screenFlash('#b06cff');
+        this.showToast('🗑️ Partida reiniciada. ¡Mazo nuevo, lobitos nuevos! 🐺');
+        document.getElementById('btn-deck').focus();
     }
 
     /* ================= EVENTOS ================= */
@@ -846,7 +978,10 @@ class WolfyClicker {
 
         document.getElementById('btn-carddex').addEventListener('click', () => this.openCarddex());
         document.getElementById('btn-sound').addEventListener('click', () => this.toggleSound());
-        document.getElementById('btn-save-menu').addEventListener('click', () => document.getElementById('save-modal').classList.remove('hidden'));
+        document.getElementById('btn-save-menu').addEventListener('click', () => {
+            this.refreshSaveSummary();
+            this.openModal('save-modal');
+        });
 
         document.getElementById('btn-export').addEventListener('click', () => this.exportSave());
         document.getElementById('btn-import').addEventListener('click', () => document.getElementById('import-file').click());
@@ -854,25 +989,36 @@ class WolfyClicker {
             if (e.target.files[0]) this.importSave(e.target.files[0]);
             e.target.value = '';
         });
-        document.getElementById('btn-reset').addEventListener('click', () => this.resetGame());
 
-        // Cerrar modales (X y clic fuera)
-        document.querySelectorAll('.close-btn').forEach(btn => {
-            btn.addEventListener('click', () => document.getElementById(btn.dataset.close).classList.add('hidden'));
+        document.getElementById('btn-reset').addEventListener('click', () => this.resetGame());
+        document.getElementById('btn-cancel-reset').addEventListener('click', () => this.cancelReset());
+        document.getElementById('btn-confirm-reset').addEventListener('click', () => this.confirmReset());
+
+        const check = document.getElementById('reset-confirm-check');
+        check.addEventListener('change', () => {
+            document.getElementById('btn-confirm-reset').disabled = !check.checked;
+            check.parentElement.classList.toggle('checked', check.checked);
         });
-        ['carddex-modal', 'save-modal'].forEach(id => {
+
+        document.querySelectorAll('.close-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.closeModal(btn.dataset.close));
+        });
+
+        ['carddex-modal', 'save-modal', 'reset-modal'].forEach(id => {
             const modal = document.getElementById(id);
-            modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) this.closeModal(id);
+            });
         });
 
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Escape') {
-                document.getElementById('carddex-modal').classList.add('hidden');
-                document.getElementById('save-modal').classList.add('hidden');
+                if (!document.getElementById('reset-modal').classList.contains('hidden')) { this.cancelReset(); return; }
+                if (!document.getElementById('save-modal').classList.contains('hidden')) { this.closeModal('save-modal'); return; }
+                if (!document.getElementById('carddex-modal').classList.contains('hidden')) { this.closeModal('carddex-modal'); return; }
                 return;
             }
-            const anyModalOpen = ['reward-modal', 'carddex-modal', 'save-modal']
-                .some(id => !document.getElementById(id).classList.contains('hidden'));
+            const anyModalOpen = MODAL_IDS.some(id => !document.getElementById(id).classList.contains('hidden'));
             if ((e.code === 'Space' || e.code === 'Enter') && !anyModalOpen) {
                 e.preventDefault();
                 this.ensureAudio();
@@ -880,7 +1026,6 @@ class WolfyClicker {
             }
         });
 
-        // Guardar al salir
         window.addEventListener('beforeunload', () => this.saveGame());
     }
 }
